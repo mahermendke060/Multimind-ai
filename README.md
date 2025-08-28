@@ -1,36 +1,207 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Model Comparison Website
 
-## Getting Started
+A Next.js application that allows users to compare responses from multiple AI models simultaneously. Users can select from GPT-5, Claude 4 Sonnet, Gemini 2.5, and DeepSeek models, send a single message, and receive responses from all selected models in parallel.
 
-First, run the development server:
+## Features
+
+- **Multi-Model Selection**: Choose from 4 different AI models
+- **Parallel Processing**: Send one message, get responses from all selected models simultaneously
+- **Response Comparison**: View all responses side-by-side for easy comparison
+- **Best Response Selection**: Mark the best response with a star
+- **Copy Functionality**: Copy any response to clipboard
+- **Real-time Updates**: See responses as they come in
+- **OpenRouter Integration**: Uses OpenRouter API for accessing multiple AI models
+
+## Supported Models
+
+- **GPT-5** (OpenAI) - Latest GPT model with advanced reasoning
+- **Claude 4 Sonnet** (Anthropic) - Fast and efficient reasoning model
+- **Gemini 2.5** (Google) - Multimodal reasoning capabilities
+- **DeepSeek** (DeepSeek) - Advanced reasoning and coding
+
+## Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
+- OpenRouter API key
+
+## Setup Instructions
+
+### 1. Clone and Install Dependencies
+
+```bash
+git clone <your-repo-url>
+cd aiflista
+npm install
+```
+
+### 2. Get OpenRouter API Key
+
+1. Visit [OpenRouter](https://openrouter.ai/)
+2. Sign up for an account
+3. Navigate to [API Keys](https://openrouter.ai/keys)
+4. Create a new API key
+5. Copy the API key
+
+### 3. Environment Configuration
+
+Create a `.env.local` file in the root directory:
+
+```bash
+# OpenRouter API Configuration
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+
+# App Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+**Important**: Replace `your_openrouter_api_key_here` with your actual OpenRouter API key.
+
+### 4. Run the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Select Models**: Choose which AI models you want to compare (minimum 1, maximum 4)
+2. **Type Message**: Enter your question or prompt in the message box
+3. **Send**: Click "Send" or press Enter to send the message to all selected models
+4. **Compare**: View responses from all models side-by-side
+5. **Mark Best**: Click the star icon to mark the best response
+6. **Copy**: Use the copy button to copy any response to clipboard
 
-## Learn More
+## API Integration
 
-To learn more about Next.js, take a look at the following resources:
+The application uses OpenRouter's API to access multiple AI models through a single interface. The backend makes parallel requests to all selected models and returns the responses simultaneously.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### API Endpoints
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `POST /api/chat` - Sends message to selected AI models and returns responses
 
-## Deploy on Vercel
+### Request Format
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```json
+{
+  "message": "Your question here",
+  "models": ["gpt-5", "claude-4-sonnet"]
+}
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Response Format
+
+```json
+{
+  "responses": [
+    {
+      "modelId": "gpt-5",
+      "content": "Response from GPT-5",
+      "usage": { "total_tokens": 150 }
+    },
+    {
+      "modelId": "claude-4-sonnet",
+      "content": "Response from Claude 4 Sonnet",
+      "usage": { "total_tokens": 120 }
+    }
+  ]
+}
+```
+
+## Project Structure
+
+```
+aiflista/
+├── app/
+│   ├── api/
+│   │   └── chat/
+│   │       └── route.ts          # API endpoint for chat
+│   ├── globals.css               # Global styles
+│   ├── layout.tsx                # Root layout
+│   └── page.tsx                  # Main application page
+├── lib/
+│   └── utils.ts                  # Utility functions
+├── public/                       # Static assets
+├── .env.local.example            # Environment variables template
+└── README.md                     # This file
+```
+
+## Technologies Used
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS 4
+- **Icons**: Lucide React
+- **API**: OpenRouter for AI model access
+- **Utilities**: clsx, tailwind-merge
+
+## Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+### Adding New Models
+
+To add new AI models:
+
+1. Update the `AI_MODELS` array in `app/page.tsx`
+2. Add the model mapping in `app/api/chat/route.ts`
+3. Update the interface types if needed
+
+## Deployment
+
+### Vercel (Recommended)
+
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Add environment variables in Vercel dashboard
+4. Deploy
+
+### Other Platforms
+
+1. Build the application: `npm run build`
+2. Set environment variables
+3. Deploy the `out` directory
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `OPENROUTER_API_KEY` | Your OpenRouter API key | Yes |
+| `NEXT_PUBLIC_APP_URL` | Your application URL | No (defaults to localhost) |
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"OpenRouter API key not configured"**
+   - Ensure `.env.local` file exists and contains `OPENROUTER_API_KEY`
+   - Restart the development server after adding environment variables
+
+2. **"Model not supported"**
+   - Check that the model ID exists in the `MODEL_MAPPING` object
+   - Verify the model is available on OpenRouter
+
+3. **API request failures**
+   - Check your OpenRouter API key is valid
+   - Ensure you have sufficient credits on OpenRouter
+   - Check the OpenRouter status page for any service issues
+
+### Getting Help
+
+- Check the [OpenRouter documentation](https://openrouter.ai/docs)
+- Review the [Next.js documentation](https://nextjs.org/docs)
+- Open an issue in this repository
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
