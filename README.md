@@ -1,6 +1,6 @@
 # AI Model Comparison Website
 
-A Next.js application that allows users to compare responses from multiple AI models simultaneously. Users can select from GPT-5, Claude 4 Sonnet, Gemini 2.5, and DeepSeek models, send a single message, and receive responses from all selected models in parallel.
+A Next.js application that allows users to compare responses from multiple AI models simultaneously. Users can select from GPT-5, Claude 3.5 Sonnet, Gemini 2.5 Pro, and DeepSeek R1 models, send a single message, and receive responses from all selected models in parallel.
 
 ## Features
 
@@ -15,9 +15,9 @@ A Next.js application that allows users to compare responses from multiple AI mo
 ## Supported Models
 
 - **GPT-5** (OpenAI) - Latest GPT model with advanced reasoning
-- **Claude 4 Sonnet** (Anthropic) - Fast and efficient reasoning model
-- **Gemini 2.5** (Google) - Multimodal reasoning capabilities
-- **DeepSeek** (DeepSeek) - Advanced reasoning and coding
+- **Claude 3.5 Sonnet** (Anthropic) - Fast and efficient reasoning model
+- **Gemini 2.5 Pro** (Google) - Multimodal reasoning capabilities
+- **DeepSeek R1** (DeepSeek) - Advanced reasoning and coding
 
 ## Prerequisites
 
@@ -87,7 +87,7 @@ The application uses OpenRouter's API to access multiple AI models through a sin
 ```json
 {
   "message": "Your question here",
-  "models": ["gpt-5", "claude-4-sonnet"]
+  "models": ["openai/gpt-5", "anthropic/claude-3.5-sonnet"]
 }
 ```
 
@@ -97,13 +97,13 @@ The application uses OpenRouter's API to access multiple AI models through a sin
 {
   "responses": [
     {
-      "modelId": "gpt-5",
+      "modelId": "openai/gpt-5",
       "content": "Response from GPT-5",
       "usage": { "total_tokens": 150 }
     },
     {
-      "modelId": "claude-4-sonnet",
-      "content": "Response from Claude 4 Sonnet",
+      "modelId": "anthropic/claude-3.5-sonnet",
+      "content": "Response from Claude 3.5 Sonnet",
       "usage": { "total_tokens": 120 }
     }
   ]

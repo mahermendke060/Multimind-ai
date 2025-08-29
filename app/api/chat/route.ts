@@ -5,10 +5,10 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 // Model mapping for OpenRouter
 const MODEL_MAPPING: { [key: string]: string } = {
-  'gpt-5': 'openai/gpt-5',
-  'claude-4-sonnet': 'anthropic/claude-3.5-sonnet',
-  'gemini-2.5': 'google/gemini-2.0-flash-exp',
-  'deepseek': 'deepseek/deepseek-coder'
+  'openai/gpt-5': 'openai/gpt-5',
+  'anthropic/claude-3.5-sonnet': 'anthropic/claude-3.5-sonnet',
+  'google/gemini-2.5-pro': 'google/gemini-2.0-flash-exp',
+  'deepseek/deepseek-r1-0528': 'deepseek/deepseek-coder'
 };
 
 export async function POST(request: NextRequest) {
