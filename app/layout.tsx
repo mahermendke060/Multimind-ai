@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Flista - Compare Multiple AI Models in Real-Time",
+  title: "MultiMind - Compare Multiple AI Models in Real-Time",
   description: "Compare responses from GPT-5, Claude 4 Sonnet, Gemini 2.5, and DeepSeek simultaneously. Modern interface for AI model comparison.",
 };
 

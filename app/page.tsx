@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Copy, Star, MessageSquare, Bot, Sparkles, Plus, Search, Moon, Image, Paperclip, Mic, Sparkles as SparklesIcon, X, History, LogOut, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Send, MessageSquare, Bot, Sparkles, Plus, Search, Moon, Image, Paperclip, Mic, Sparkles as SparklesIcon, X, History, LogOut, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
@@ -35,7 +35,7 @@ interface ModelResponse {
 
 const AI_MODELS: AIModel[] = [
   {
-    id: 'openai/gpt-5',
+    id: 'gpt-5',
     name: 'GPT-5',
     provider: 'OpenAI',
     description: 'Latest GPT model with advanced reasoning',
@@ -44,8 +44,8 @@ const AI_MODELS: AIModel[] = [
     bgColor: 'bg-violet-500/10'
   },
   {
-    id: 'anthropic/claude-3.5-sonnet',
-    name: 'Claude 3.5 Sonnet',
+    id: 'claude-4-sonnet',
+    name: 'Claude 4 Sonnet',
     provider: 'Anthropic',
     description: 'Fast and efficient reasoning model',
     icon: <Bot className="w-5 h-5" />,
@@ -53,8 +53,8 @@ const AI_MODELS: AIModel[] = [
     bgColor: 'bg-cyan-500/10'
   },
   {
-    id: 'google/gemini-2.5-pro',
-    name: 'Gemini 2.5 Pro',
+    id: 'gemini-2.5',
+    name: 'Gemini 2.5',
     provider: 'Google',
     description: 'Multimodal reasoning capabilities',
     icon: <MessageSquare className="w-5 h-5" />,
@@ -62,20 +62,47 @@ const AI_MODELS: AIModel[] = [
     bgColor: 'bg-emerald-500/10'
   },
   {
-    id: 'deepseek/deepseek-r1-0528',
-    name: 'DeepSeek R1',
+    id: 'deepseek',
+    name: 'DeepSeek',
     provider: 'DeepSeek',
     description: 'Advanced reasoning and coding',
     icon: <Bot className="w-5 h-5" />,
     color: 'from-rose-500 to-pink-600',
     bgColor: 'bg-rose-500/10'
+  },
+  {
+    id: 'mistral-small',
+    name: 'Mistral Small',
+    provider: 'Mistral AI',
+    description: 'Efficient 24B parameter model',
+    icon: <Bot className="w-5 h-5" />,
+    color: 'from-orange-500 to-red-600',
+    bgColor: 'bg-orange-500/10'
+  },
+  {
+    id: 'gemma-3n',
+    name: 'Gemma 3N',
+    provider: 'Google',
+    description: 'Lightweight 3B parameter model',
+    icon: <MessageSquare className="w-5 h-5" />,
+    color: 'from-green-500 to-emerald-600',
+    bgColor: 'bg-green-500/10'
+  },
+  {
+    id: 'llama-3.3',
+    name: 'Llama 3.3',
+    provider: 'Meta',
+    description: '8B parameter instruction model',
+    icon: <Bot className="w-5 h-5" />,
+    color: 'from-yellow-500 to-orange-600',
+    bgColor: 'bg-yellow-500/10'
   }
 ];
 
 export default function Home() {
   const { user, signOut } = useAuth();
   const { darkMode, toggleDarkMode, mounted } = useTheme();
-  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [selectedModels, setSelectedModels] = useState<string[]>(AI_MODELS.map(m => m.id));
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentInput, setCurrentInput] = useState('');
   const [responses, setResponses] = useState<ModelResponse[]>([]);
@@ -306,56 +333,7 @@ export default function Home() {
     }
   };
 
-  const handleCopyResponse = async (content: string) => {
-    try {
-      await navigator.clipboard.writeText(content);
-      // You could add a toast notification here
-    } catch (error) {
-      console.error('Failed to copy:', error);
-    }
-  };
-
-  const handleMarkBest = async (modelId: string) => {
-    setResponses(prev => prev.map(r => ({
-      ...r,
-      isBest: r.modelId === modelId
-    })));
-
-    // Update in database
-    if (currentSessionId && messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.role === 'user') {
-        // Find the message ID in database and update the best response
-        try {
-          const { data: messages } = await supabase
-            .from('chat_messages')
-            .select('id')
-            .eq('session_id', currentSessionId)
-            .eq('content', lastMessage.content)
-            .eq('role', 'user')
-            .order('timestamp', { ascending: false })
-            .limit(1);
-
-          if (messages && messages[0]) {
-            // Reset all responses to not best
-            await supabase
-              .from('model_responses')
-              .update({ is_best: false })
-              .eq('message_id', messages[0].id);
-
-            // Set the selected response as best
-            await supabase
-              .from('model_responses')
-              .update({ is_best: true })
-              .eq('message_id', messages[0].id)
-              .eq('model_id', modelId);
-          }
-        } catch (error) {
-          console.error('Error updating best response:', error);
-        }
-      }
-    }
-  };
+  // Removed unused functions: handleCopyResponse and handleMarkBest
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -380,7 +358,7 @@ export default function Home() {
             <h1 className={cn(
               "text-3xl font-bold mb-2",
               darkMode ? "text-white" : "text-slate-900"
-            )}>AI Flista</h1>
+            )}>MultiMind</h1>
             <p className={cn(
               darkMode ? "text-slate-400" : "text-slate-600"
             )}>Sign in to continue</p>
@@ -397,7 +375,7 @@ export default function Home() {
               <p className={cn(
                 "mb-6",
                 darkMode ? "text-slate-400" : "text-slate-600"
-              )}>Please sign in to use AI Flista</p>
+              )}>Please sign in to use MultiMind</p>
               <Link
                 href="/auth"
                 className="inline-block bg-gradient-to-r from-violet-600 to-purple-700 text-white rounded-xl py-3 px-6 font-medium hover:from-violet-700 hover:to-purple-800 transition-all duration-200"
@@ -435,7 +413,7 @@ export default function Home() {
           </div>
             {!sidebarCollapsed && (
           <h1 className="text-xl font-bold bg-gradient-to-r from-violet-400 to-purple-500 bg-clip-text text-transparent">
-            AI Flista
+            MultiMind
           </h1>
             )}
           </div>
@@ -666,7 +644,7 @@ export default function Home() {
                 <h1 className={cn(
                   "text-2xl font-bold",
                   darkMode ? "text-white" : "text-slate-900"
-                )}>AI Flista</h1>
+                )}>MultiMind</h1>
                 <p className={cn(
                   darkMode ? "text-slate-400" : "text-slate-600"
                 )}>Compare AI models in real-time</p>
@@ -683,7 +661,7 @@ export default function Home() {
                     ? "bg-slate-700 text-white" 
                     : "bg-slate-200 text-slate-800"
                 )}>
-                  ({selectedModels.length}/4)
+                  ({selectedModels.length}/7)
                 </span>
               </div>
 
@@ -719,7 +697,7 @@ export default function Home() {
             <div className="w-24 h-24 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
               <SparklesIcon className="w-12 h-12 text-white" />
             </div>
-            <h2 className="text-4xl font-bold text-white mb-4">Welcome to AI Flista</h2>
+            <h2 className="text-4xl font-bold text-white mb-4">Welcome to MultiMind</h2>
             <p className="text-slate-400 text-lg mb-8">Click &quot;All&quot; above to start comparing all AI models</p>
             <button 
               onClick={() => setSelectedModels(AI_MODELS.map(m => m.id))}
@@ -736,45 +714,48 @@ export default function Home() {
               <div className="flex items-center gap-4 mb-4">
                 <span className={cn(
                   darkMode ? "text-slate-400" : "text-slate-600"
-                )}>Models ({selectedModels.length}/4)</span>
+                )}>Models ({selectedModels.length}/7)</span>
               </div>
-              <div className="flex items-center gap-4">
-                {AI_MODELS.map((model) => {
-                  const isSelected = selectedModels.includes(model.id);
-                  return (
-                    <button
-                      key={model.id}
-                      onClick={() => handleModelToggle(model.id)}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all duration-200 cursor-pointer",
-                        isSelected 
-                          ? `bg-gradient-to-r ${model.color} border-transparent text-white shadow-lg` 
-                          : darkMode
-                            ? "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:border-slate-600/50 hover:bg-slate-700/50"
-                            : "bg-slate-100 border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-200"
-                      )}
-                    >
-                      {model.icon}
-                      <span className="font-medium">{model.name}</span>
-                      {isSelected && (
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleModelToggle(model.id);
-                          }}
-                          className="ml-2 hover:bg-white/20 rounded-full p-1 transition-colors cursor-pointer"
-                        >
-                          <X className="w-3 h-3" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+              <div className="flex items-center gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50">
+                <div className="flex items-center gap-4 min-w-max">
+                  {AI_MODELS.map((model) => {
+                    const isSelected = selectedModels.includes(model.id);
+                    return (
+                      <button
+                        key={model.id}
+                        onClick={() => handleModelToggle(model.id)}
+                        className={cn(
+                          "flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all duration-200 cursor-pointer flex-shrink-0",
+                          isSelected 
+                            ? `bg-gradient-to-r ${model.color} border-transparent text-white shadow-lg` 
+                            : darkMode
+                              ? "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:border-slate-600/50 hover:bg-slate-700/50"
+                              : "bg-slate-100 border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-200"
+                        )}
+                      >
+                        {model.icon}
+                        <span className="font-medium">{model.name}</span>
+                        {isSelected && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleModelToggle(model.id);
+                            }}
+                            className="ml-2 hover:bg-white/20 rounded-full p-1 transition-colors cursor-pointer"
+                          >
+                            <X className="w-3 h-3" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
             {/* Chat Columns */}
-            <div className="grid gap-6 mb-8" style={{ gridTemplateColumns: `repeat(${selectedModels.length}, 1fr)` }}>
+            <div className="overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50">
+              <div className="grid gap-6 mb-8 min-w-max" style={{ gridTemplateColumns: `repeat(${selectedModels.length}, 400px)` }}>
               {selectedModels.map((modelId) => {
                 const model = AI_MODELS.find(m => m.id === modelId);
                 const response = responses.find(r => r.modelId === modelId);
@@ -869,8 +850,6 @@ export default function Home() {
                           )}>
                             {model?.icon}
                           </div>
-                          <p className="text-lg font-medium mb-2">Ready to chat with {model?.name}</p>
-                          <p className="text-sm">Type a message below to get started</p>
                         </div>
                       )}
                     </div>
@@ -879,6 +858,7 @@ export default function Home() {
                   </div>
                 );
               })}
+              </div>
             </div>
 
             {/* Bottom Message Input */}
@@ -901,6 +881,7 @@ export default function Home() {
                     )}
                     title="Upload Image"
                   >
+                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
                     <Image className="w-5 h-5" />
                   </button>
                   <button 

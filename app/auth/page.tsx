@@ -62,7 +62,7 @@ export default function AuthPage() {
           <h1 className={cn(
             "text-3xl font-bold mb-2",
             darkMode ? "text-white" : "text-slate-900"
-          )}>AI Flista</h1>
+          )}>MultiMind</h1>
           <p className={cn(
             darkMode ? "text-slate-400" : "text-slate-600"
           )}>Sign in to continue</p>
