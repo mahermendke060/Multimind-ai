@@ -15,8 +15,9 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
 
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword } = useAuth();
   const { darkMode, mounted } = useTheme();
   const router = useRouter();
 
@@ -27,7 +28,12 @@ export default function AuthPage() {
     setMessage('');
 
     try {
-      if (isLogin) {
+      if (isForgotPassword) {
+        const { error } = await resetPassword(email);
+        if (error) throw error;
+        setMessage('Password reset link sent to your email!');
+        setIsForgotPassword(false);
+      } else if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) throw error;
         router.push('/');
@@ -76,7 +82,7 @@ export default function AuthPage() {
             : "bg-white/90 border-slate-200/50"
         )}>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {!isLogin && (
+            {!isLogin && !isForgotPassword && (
               <div>
                 <label htmlFor="fullName" className={cn(
                   "block text-sm font-medium mb-2",
@@ -124,28 +130,48 @@ export default function AuthPage() {
               />
             </div>
 
-            <div>
-              <label htmlFor="password" className={cn(
-                "block text-sm font-medium mb-2",
-                darkMode ? "text-slate-300" : "text-slate-700"
-              )}>
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={cn(
-                  "w-full rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors duration-300",
-                  darkMode 
-                    ? "bg-slate-700/50 text-white border-slate-600/50 placeholder-slate-400" 
-                    : "bg-slate-50 text-slate-900 border-slate-300/50 placeholder-slate-500"
+            {!isForgotPassword && (
+              <div>
+                <label htmlFor="password" className={cn(
+                  "block text-sm font-medium mb-2",
+                  darkMode ? "text-slate-300" : "text-slate-700"
+                )}>
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={cn(
+                    "w-full rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-violet-500 transition-colors duration-300",
+                    darkMode 
+                      ? "bg-slate-700/50 text-white border-slate-600/50 placeholder-slate-400" 
+                      : "bg-slate-50 text-slate-900 border-slate-300/50 placeholder-slate-500"
+                  )}
+                  placeholder="Enter your password"
+                  required
+                />
+                {isLogin && (
+                  <div className="mt-2 text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsForgotPassword(true);
+                        setError('');
+                        setMessage('');
+                      }}
+                      className={cn(
+                        "text-sm transition-colors",
+                        darkMode ? "text-slate-400 hover:text-violet-400" : "text-slate-500 hover:text-violet-600"
+                      )}
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
                 )}
-                placeholder="Enter your password"
-                required
-              />
-            </div>
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
@@ -164,20 +190,39 @@ export default function AuthPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-violet-600 to-purple-700 text-white rounded-xl py-3 font-medium hover:from-violet-700 hover:to-purple-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
-              {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Sign Up'}
+              {loading ? 'Loading...' : isForgotPassword ? 'Send Reset Link' : isLogin ? 'Sign In' : 'Sign Up'}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className={cn(
-                "transition-colors",
-                darkMode ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-800"
-              )}
-            >
-              {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-            </button>
+          <div className="mt-6 text-center space-y-3">
+            {isForgotPassword ? (
+              <button
+                onClick={() => {
+                  setIsForgotPassword(false);
+                  setIsLogin(true);
+                  setError('');
+                  setMessage('');
+                }}
+                className={cn(
+                  "transition-colors",
+                  darkMode ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-800"
+                )}
+              >
+                Back to Sign In
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => setIsLogin(!isLogin)}
+                  className={cn(
+                    "transition-colors",
+                    darkMode ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-800"
+                  )}
+                >
+                  {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

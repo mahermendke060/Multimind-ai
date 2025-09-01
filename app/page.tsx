@@ -2,6 +2,64 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, MessageSquare, Bot, Sparkles, Plus, Search, Moon, Image, Paperclip, Mic, Sparkles as SparklesIcon, X, History, LogOut, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import NextImage from 'next/image';
+
+// Custom SVG Logo Components
+const GPTLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
+  <div 
+    className={className}
+    style={{
+      backgroundImage: 'url(/svg-logos/gpt-5.svg)',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
+      minWidth: '32px',
+      minHeight: '32px'
+    }}
+  />
+);
+
+const ClaudeLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
+  <div 
+    className={className}
+    style={{
+      backgroundImage: 'url(/svg-logos/claude.svg)',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
+      minWidth: '32px',
+      minHeight: '32px'
+    }}
+  />
+);
+
+const GeminiLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
+  <div 
+    className={className}
+    style={{
+      backgroundImage: 'url(/svg-logos/gemini.svg)',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
+      minWidth: '32px',
+      minHeight: '32px'
+    }}
+  />
+);
+
+const DeepSeekLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
+  <div 
+    className={className}
+    style={{
+      backgroundImage: 'url(/svg-logos/deepseek.svg)',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
+      minWidth: '32px',
+      minHeight: '32px'
+    }}
+  />
+);
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
@@ -39,7 +97,7 @@ const AI_MODELS: AIModel[] = [
     name: 'GPT-5',
     provider: 'OpenAI',
     description: 'Latest GPT model with advanced reasoning',
-    icon: <Sparkles className="w-5 h-5" />,
+    icon: <GPTLogo className="w-8 h-8" />,
     color: 'from-violet-500 to-purple-600',
     bgColor: 'bg-violet-500/10'
   },
@@ -48,7 +106,7 @@ const AI_MODELS: AIModel[] = [
     name: 'Claude 4 Sonnet',
     provider: 'Anthropic',
     description: 'Fast and efficient reasoning model',
-    icon: <Bot className="w-5 h-5" />,
+    icon: <ClaudeLogo className="w-8 h-8" />,
     color: 'from-cyan-500 to-blue-600',
     bgColor: 'bg-cyan-500/10'
   },
@@ -57,7 +115,7 @@ const AI_MODELS: AIModel[] = [
     name: 'Gemini 2.5',
     provider: 'Google',
     description: 'Multimodal reasoning capabilities',
-    icon: <MessageSquare className="w-5 h-5" />,
+    icon: <GeminiLogo className="w-8 h-8" />,
     color: 'from-emerald-500 to-teal-600',
     bgColor: 'bg-emerald-500/10'
   },
@@ -66,7 +124,7 @@ const AI_MODELS: AIModel[] = [
     name: 'DeepSeek',
     provider: 'DeepSeek',
     description: 'Advanced reasoning and coding',
-    icon: <Bot className="w-5 h-5" />,
+    icon: <DeepSeekLogo className="w-8 h-8" />,
     color: 'from-rose-500 to-pink-600',
     bgColor: 'bg-rose-500/10'
   }
@@ -365,7 +423,7 @@ export default function Home() {
   return (
     <div className={cn(
       "min-h-screen transition-colors duration-300",
-      darkMode ? "bg-slate-900 text-white" : "bg-white text-slate-900"
+      darkMode ? "bg-[#202124] text-white" : "bg-[#FBF9F6] text-gray-900"
     )}>
       {/* Sidebar */}
       <div className={cn(
@@ -385,9 +443,17 @@ export default function Home() {
             <SparklesIcon className="w-6 h-6 text-white" />
           </div>
             {!sidebarCollapsed && (
+              <div>
           <h1 className="text-xl font-bold bg-gradient-to-r from-violet-400 to-purple-500 bg-clip-text text-transparent">
             MultiMind
           </h1>
+                <p className={cn(
+                  "text-sm",
+                  darkMode ? "text-slate-400" : "text-slate-600"
+                )}>
+                  Compare AI models in real-time
+                </p>
+              </div>
             )}
           </div>
 
@@ -458,25 +524,7 @@ export default function Home() {
             </Link>
           </div>
 
-        {/* Search */}
-          {!sidebarCollapsed && (
-        <div className="relative mb-6">
-              <Search className={cn(
-                "absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4",
-                darkMode ? "text-gray-400" : "text-gray-500"
-              )} />
-          <input
-            type="text"
-            placeholder="Search chats..."
-                className={cn(
-                  "w-full rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-violet-500 border",
-                  darkMode 
-                    ? "bg-gray-700 text-white placeholder-gray-400 border-slate-600/50" 
-                    : "bg-gray-100 text-slate-800 placeholder-gray-500 border-slate-300/50"
-                )}
-          />
-        </div>
-          )}
+
 
           {/* Recent Chats */}
           {!sidebarCollapsed && (
@@ -601,68 +649,7 @@ export default function Home() {
         "transition-all duration-300 p-6", 
         sidebarCollapsed ? "ml-16" : "ml-64"
       )}>
-        {/* Top Header Bar */}
-        <div className={cn(
-          "rounded-2xl p-6 mb-6 backdrop-blur-xl border-2",
-          darkMode 
-            ? "bg-slate-800/80 border-slate-600" 
-            : "bg-white/80 border-slate-300"
-        )}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <SparklesIcon className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className={cn(
-                  "text-2xl font-bold",
-                  darkMode ? "text-white" : "text-slate-900"
-                )}>MultiMind</h1>
-                <p className={cn(
-                  darkMode ? "text-slate-400" : "text-slate-600"
-                )}>Compare AI models in real-time</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className={cn(
-                  darkMode ? "text-slate-400" : "text-slate-600"
-                )}>Models</span>
-                <span className={cn(
-                  "px-3 py-1 rounded-lg font-medium",
-                  darkMode 
-                    ? "bg-slate-700 text-white" 
-                    : "bg-slate-200 text-slate-800"
-                )}>
-                  ({selectedModels.length}/7)
-                </span>
-              </div>
 
-              <button 
-                onClick={() => setSelectedModels([])}
-                className={cn(
-                  "px-3 py-1 transition-colors",
-                  darkMode 
-                    ? "text-slate-400 hover:text-white" 
-                    : "text-slate-600 hover:text-slate-800"
-                )}
-              >
-                Clear
-              </button>
-              <button 
-                onClick={() => setSelectedModels(AI_MODELS.map(m => m.id))}
-                className={cn(
-                  "px-3 py-1 transition-colors",
-                  darkMode 
-                    ? "text-slate-400 hover:text-white" 
-                    : "text-slate-600 hover:text-slate-800"
-                )}
-              >
-                All
-              </button>
-            </div>
-          </div>
-        </div>
 
         {selectedModels.length === 0 ? (
           /* Welcome Screen */
@@ -682,55 +669,14 @@ export default function Home() {
         ) : (
           /* Chat Interface */
           <>
-            {/* Header with Model Selectors */}
-            <div className="mb-8">
-              <div className="flex items-center gap-4 mb-4">
-                <span className={cn(
-                  darkMode ? "text-slate-400" : "text-slate-600"
-                )}>Models ({selectedModels.length}/7)</span>
-              </div>
-              <div className="flex items-center gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50">
-                <div className="flex items-center gap-4 min-w-max">
-                  {AI_MODELS.map((model) => {
-                    const isSelected = selectedModels.includes(model.id);
-                    return (
-                      <button
-                        key={model.id}
-                        onClick={() => handleModelToggle(model.id)}
-                        className={cn(
-                          "flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all duration-200 cursor-pointer flex-shrink-0",
-                          isSelected 
-                            ? `bg-gradient-to-r ${model.color} border-transparent text-white shadow-lg` 
-                            : darkMode
-                              ? "bg-slate-800/50 border-slate-700/50 text-slate-400 hover:border-slate-600/50 hover:bg-slate-700/50"
-                              : "bg-slate-100 border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-200"
-                        )}
-                      >
-                        {model.icon}
-                        <span className="font-medium">{model.name}</span>
-                        {isSelected && (
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleModelToggle(model.id);
-                            }}
-                            className="ml-2 hover:bg-white/20 rounded-full p-1 transition-colors cursor-pointer"
-                          >
-                            <X className="w-3 h-3" />
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+
 
             {/* Chat Columns */}
-            <div className="overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50">
-              <div className="grid gap-6 mb-8 min-w-max" style={{ gridTemplateColumns: `repeat(${selectedModels.length}, 400px)` }}>
-              {selectedModels.map((modelId) => {
-                const model = AI_MODELS.find(m => m.id === modelId);
+            <div className="overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50 h-[calc(100vh-200px)]">
+              <div className="grid gap-6 min-w-max h-full" style={{ gridTemplateColumns: `repeat(${AI_MODELS.length}, 400px)` }}>
+              {AI_MODELS.map((model) => {
+                const modelId = model.id;
+                const isSelected = selectedModels.includes(modelId);
                 const response = responses.find(r => r.modelId === modelId);
                 const hasMessages = messages.length > 0;
                 
@@ -738,77 +684,114 @@ export default function Home() {
                   <div
                     key={modelId}
                     className={cn(
-                      "bg-slate-800/50 rounded-2xl border-2 border-slate-600 p-6 min-h-[500px] flex flex-col",
-                      "backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300",
-                      model?.bgColor
+                      "rounded-2xl border-2 p-6 h-full flex flex-col backdrop-blur-sm transition-all duration-300",
+                      isSelected 
+                        ? darkMode 
+                          ? "bg-slate-800 border-slate-600 shadow-xl hover:shadow-2xl" 
+                          : "bg-white border-slate-300 shadow-xl hover:shadow-2xl"
+                        : darkMode 
+                          ? "bg-slate-800/50 border-slate-700/50 opacity-60" 
+                          : "bg-white/50 border-slate-300/50 opacity-60"
                     )}
                   >
                     {/* Model Header */}
-                    <div className="mb-6">
+                    <div className="mb-6 -mx-6 -mt-6">
                       <div className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border w-full",
-                        darkMode 
-                          ? `bg-gradient-to-r ${model?.color} border-white/20`
-                          : `bg-gradient-to-r ${model?.color} border-slate-200/50 shadow-md`
+                        "flex items-center justify-between px-4 py-3 w-full transition-all duration-300",
+                        isSelected
+                          ? darkMode 
+                            ? "bg-slate-700 border-b border-slate-600"
+                            : "bg-white border-b border-gray-200"
+                          : darkMode
+                            ? "bg-slate-700/50 border-b border-slate-600/50"
+                            : "bg-white/50 border-b border-gray-200"
                       )}>
-                        <div className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center backdrop-blur-sm",
-                          darkMode 
-                            ? "bg-white/20" 
-                            : "bg-white/90"
-                        )}>
-                          {model?.icon}
-                        </div>
+                                                <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 flex items-center justify-center -ml-2">
+                            {model?.icon}
+                          </div>
                         <div>
                           <h3 className={cn(
-                            "font-bold text-lg",
-                            darkMode ? "text-white" : "text-white drop-shadow-sm"
+                              "font-bold text-lg transition-colors duration-300",
+                              isSelected
+                                ? darkMode ? "text-white" : "text-gray-900"
+                                : darkMode ? "text-gray-400" : "text-gray-500"
                           )}>{model?.name}</h3>
                           <p className={cn(
-                            "text-sm",
-                            darkMode ? "text-white/80" : "text-white/90 drop-shadow-sm"
+                              "text-sm transition-colors duration-300",
+                              isSelected
+                                ? darkMode ? "text-gray-300" : "text-gray-600"
+                                : darkMode ? "text-gray-500" : "text-gray-400"
                           )}>{model?.provider}</p>
                         </div>
+                        </div>
+                        
+                        {/* Toggle Switch - Select/Deselect Model */}
+                        <button 
+                          onClick={() => handleModelToggle(modelId)}
+                          className={cn(
+                            "relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500/50 bg-black border border-slate-700",
+                          )}
+                          title={isSelected ? "Deselect Model" : "Select Model"}
+                        >
+                          <span
+                            className={cn(
+                              "inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-200",
+                              isSelected ? "translate-x-6" : "translate-x-1"
+                            )}
+                          />
+                        </button>
                       </div>
                     </div>
 
                     {/* Chat Content */}
-                    <div className="flex-1 space-y-4">
-                      {hasMessages && (
+                    <div className={cn(
+                      "flex-1 space-y-4 transition-opacity duration-300",
+                      !isSelected && "opacity-50"
+                    )}>
+                      {hasMessages && isSelected && (
                         <>
-                          {/* User Message - Right Side */}
-                          <div className="flex items-start gap-3 justify-end">
-                            <div className="bg-slate-600/80 rounded-2xl p-4 flex-1 border-2 border-slate-500/50 max-w-[80%] shadow-lg">
-                              <p className="text-white font-medium">{messages[messages.length - 1]?.content}</p>
+                          {/* User Message - Left Side */}
+                          <div className="flex items-start gap-4 mb-6">
+                            <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                              <User className="w-4 h-4 text-white" />
                             </div>
-                            <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-                              <span className="text-sm font-medium text-white">U</span>
+                            <div className="flex-1">
+                              <p className={cn(
+                                "text-base leading-relaxed",
+                                darkMode ? "text-white" : "text-gray-900"
+                              )}>{messages[messages.length - 1]?.content}</p>
                             </div>
                           </div>
 
                           {/* AI Response - Left Side */}
-                          <div className="flex items-start gap-3">
-                            <div className={cn(
-                              "w-8 h-8 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg",
-                              `bg-gradient-to-r ${model?.color}`
-                            )}>
+                          <div className="flex items-start gap-4">
+                            <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
                               {model?.icon}
                             </div>
-                            <div className={cn(
-                              "rounded-2xl p-4 flex-1 border-2 shadow-lg",
-                              `bg-gradient-to-r ${model?.color} opacity-80`
-                            )}>
+                            <div className="flex-1">
                               {response?.isLoading ? (
-                                <div className="flex items-center gap-3 text-slate-300">
-                                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-violet-500"></div>
+                            <div className={cn(
+                                  "flex items-center gap-2",
+                                  darkMode ? "text-gray-300" : "text-gray-600"
+                            )}>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
                                   <span className="text-sm">Thinking...</span>
                                 </div>
                               ) : response?.error ? (
-                                <p className="text-rose-400 text-sm">{response.error}</p>
+                                <p className="text-red-600 text-sm">{response.error}</p>
                               ) : response?.content ? (
-                                <p className="text-white leading-relaxed">{response.content}</p>
+                                <div className="prose prose-sm max-w-none">
+                                  <p className={cn(
+                                    "text-base leading-relaxed whitespace-pre-wrap",
+                                    darkMode ? "text-white" : "text-gray-900"
+                                  )}>{response.content}</p>
+                                </div>
                               ) : (
-                                <p className="text-slate-400 text-sm">Ready to respond...</p>
+                                <p className={cn(
+                                  "text-sm",
+                                  darkMode ? "text-gray-400" : "text-gray-500"
+                                )}>Ready to respond...</p>
                               )}
                             </div>
                           </div>
@@ -816,13 +799,34 @@ export default function Home() {
                       )}
 
                       {!hasMessages && (
-                        <div className="text-center text-slate-400 py-12">
+                        <div className="flex flex-col items-center justify-center py-16">
                           <div className={cn(
-                            "w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center",
-                            `bg-gradient-to-r ${model?.color}`
+                            "w-16 h-16 mb-6 flex items-center justify-center transition-all duration-300",
+                            isSelected 
+                              ? "opacity-100"
+                              : "opacity-40"
                           )}>
                             {model?.icon}
                           </div>
+                          <h3 className={cn(
+                            "text-2xl font-semibold mb-3 transition-colors duration-300",
+                            isSelected
+                              ? darkMode ? "text-white" : "text-gray-900"
+                              : "text-gray-400"
+                          )}>
+                            {model?.name === "GPT-5" && "Hi, I'm GPT-5."}
+                            {model?.name === "Claude Sonnet 4" && "Hi maher, how are you?"}
+                            {model?.name === "Gemini" && "Hello, Maherunnisa"}
+                            {model?.name === "DeepSeek" && "Hi, I'm DeepSeek."}
+                          </h3>
+                          <p className={cn(
+                            "text-base text-center max-w-md transition-colors duration-300",
+                            isSelected
+                              ? darkMode ? "text-gray-300" : "text-gray-600"
+                              : "text-gray-400"
+                          )}>
+                            {isSelected ? "How can I help you today?" : "Model disabled"}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -836,49 +840,22 @@ export default function Home() {
 
             {/* Bottom Message Input */}
             <div className={cn(
-              "fixed bottom-6 rounded-2xl backdrop-blur-xl shadow-2xl transition-all duration-300 border-2",
+              "fixed bottom-8 rounded-2xl backdrop-blur-xl shadow-2xl transition-all duration-300 border-2 z-10 max-w-4xl mx-auto",
               darkMode 
                 ? "bg-slate-800/90 border-slate-600" 
                 : "bg-white/95 border-slate-300",
               sidebarCollapsed ? "left-20 right-6" : "left-72 right-6"
             )}>
-              <div className="flex items-center gap-3 p-4">
-                {/* Left Action Buttons */}
-                <div className="flex items-center gap-1">
-                  <button 
-                    className={cn(
-                      "p-2.5 transition-all duration-200 rounded-xl hover:scale-105",
-                      darkMode 
-                        ? "text-slate-400 hover:text-white hover:bg-slate-700/60" 
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/80"
-                    )}
-                    title="Upload Image"
-                  >
-                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
-                    <Image className="w-5 h-5" />
-                  </button>
-                  <button 
-                    className={cn(
-                      "p-2.5 transition-all duration-200 rounded-xl hover:scale-105",
-                      darkMode 
-                        ? "text-slate-400 hover:text-white hover:bg-slate-700/60" 
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/80"
-                    )}
-                    title="Attach File"
-                  >
-                    <Paperclip className="w-5 h-5" />
-                  </button>
-                </div>
-
+              <div className="flex flex-col gap-2 p-4">
                 {/* Main Input Field */}
-                <div className="flex-1 relative">
+                <div className="relative">
                   <input
                     value={currentInput}
                     onChange={(e) => setCurrentInput(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Ask me anything..."
                     className={cn(
-                      "w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 border-2 transition-all duration-200",
+                      "w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50 border-2 transition-all duration-200",
                       darkMode 
                         ? "bg-slate-700/60 text-white placeholder-slate-400 border-slate-600 focus:border-violet-500" 
                         : "bg-slate-50 text-slate-800 placeholder-slate-500 border-slate-300 focus:border-violet-500"
@@ -897,14 +874,44 @@ export default function Home() {
                   )}
                 </div>
 
+                {/* Action Buttons Row */}
+                <div className="flex items-center justify-between">
+                  {/* Left Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <button 
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 transition-all duration-200 rounded-lg hover:scale-105",
+                        darkMode 
+                          ? "text-white hover:bg-slate-700/60" 
+                          : "text-slate-700 hover:bg-slate-200/80"
+                      )}
+                      title="Generate Image"
+                    >
+                      <Image className="w-4 h-4" />
+                      <span className="text-sm font-medium">Generate Image</span>
+                    </button>
+                    <button 
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 transition-all duration-200 rounded-lg hover:scale-105",
+                        darkMode 
+                          ? "text-white hover:bg-slate-700/60" 
+                          : "text-slate-700 hover:bg-slate-200/80"
+                      )}
+                      title="Attach Files"
+                    >
+                      <Paperclip className="w-4 h-4" />
+                      <span className="text-sm font-medium">Attach Files</span>
+                    </button>
+                </div>
+
                 {/* Right Action Buttons */}
-                <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                   <button 
                     className={cn(
-                      "p-2.5 transition-all duration-200 rounded-xl hover:scale-105",
+                        "p-2.5 transition-all duration-200 rounded-lg hover:scale-105",
                       darkMode 
-                        ? "text-slate-400 hover:text-white hover:bg-slate-700/60" 
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/80"
+                          ? "text-white hover:bg-slate-700/60" 
+                          : "text-slate-700 hover:bg-slate-200/80"
                     )}
                     title="Voice Input"
                   >
@@ -912,10 +919,10 @@ export default function Home() {
                   </button>
                   <button 
                     className={cn(
-                      "p-2.5 transition-all duration-200 rounded-xl hover:scale-105",
+                        "p-2.5 transition-all duration-200 rounded-lg hover:scale-105",
                       darkMode 
-                        ? "text-slate-400 hover:text-white hover:bg-slate-700/60" 
-                        : "text-slate-500 hover:text-slate-700 hover:bg-slate-100/80"
+                          ? "text-white hover:bg-slate-700/60" 
+                          : "text-slate-700 hover:bg-slate-200/80"
                     )}
                     title="AI Suggestions"
                   >
@@ -925,15 +932,16 @@ export default function Home() {
                     onClick={handleSendMessage}
                     disabled={!currentInput.trim() || selectedModels.length === 0 || isLoading}
                     className={cn(
-                      "p-3 transition-all duration-200 rounded-xl shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
+                        "p-3 transition-all duration-200 rounded-lg shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
                       currentInput.trim() && selectedModels.length > 0 && !isLoading
-                        ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700"
+                          ? "bg-green-500 text-white hover:bg-green-600"
                         : "bg-slate-600/50 text-slate-400"
                     )}
                     title="Send Message"
                   >
                     <Send className="w-5 h-5" />
                   </button>
+                  </div>
                 </div>
               </div>
             </div>
