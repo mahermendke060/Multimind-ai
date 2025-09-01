@@ -69,33 +69,6 @@ const AI_MODELS: AIModel[] = [
     icon: <Bot className="w-5 h-5" />,
     color: 'from-rose-500 to-pink-600',
     bgColor: 'bg-rose-500/10'
-  },
-  {
-    id: 'mistral-small',
-    name: 'Mistral Small',
-    provider: 'Mistral AI',
-    description: 'Efficient 24B parameter model',
-    icon: <Bot className="w-5 h-5" />,
-    color: 'from-orange-500 to-red-600',
-    bgColor: 'bg-orange-500/10'
-  },
-  {
-    id: 'gemma-3n',
-    name: 'Gemma 3N',
-    provider: 'Google',
-    description: 'Lightweight 3B parameter model',
-    icon: <MessageSquare className="w-5 h-5" />,
-    color: 'from-green-500 to-emerald-600',
-    bgColor: 'bg-green-500/10'
-  },
-  {
-    id: 'llama-3.3',
-    name: 'Llama 3.3',
-    provider: 'Meta',
-    description: '8B parameter instruction model',
-    icon: <Bot className="w-5 h-5" />,
-    color: 'from-yellow-500 to-orange-600',
-    bgColor: 'bg-yellow-500/10'
   }
 ];
 

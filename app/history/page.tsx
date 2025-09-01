@@ -639,12 +639,6 @@ export default function HistoryPage() {
                                     return { name: 'Gemini 2.5 Pro Google', color: 'from-emerald-500 to-teal-600', bgColor: 'bg-gradient-to-br from-emerald-50 to-teal-100' };
                                   } else if (id.includes('deepseek')) {
                                     return { name: 'DeepSeek R1 DeepSeek', color: 'from-rose-500 to-pink-600', bgColor: 'bg-gradient-to-br from-rose-50 to-pink-100' };
-                                  } else if (id.includes('mistral') || id.includes('mistralai/mistral-small-3.2-24b-instruct')) {
-                                    return { name: 'Mistral Small Mistral AI', color: 'from-orange-500 to-red-600', bgColor: 'bg-gradient-to-br from-orange-50 to-red-100' };
-                                  } else if (id.includes('gemma-3n')) {
-                                    return { name: 'Gemma 3N Google', color: 'from-green-500 to-emerald-600', bgColor: 'bg-gradient-to-br from-green-50 to-emerald-100' };
-                                  } else if (id.includes('llama-3.3')) {
-                                    return { name: 'Llama 3.3 Meta', color: 'from-yellow-500 to-orange-600', bgColor: 'bg-gradient-to-br from-yellow-50 to-orange-100' };
                                   }
                                   return { name: modelId, color: 'from-gray-500 to-gray-600', bgColor: 'bg-gradient-to-br from-gray-50 to-gray-100' };
                                 };
