@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-// Model mapping for OpenRouter
 const MODEL_MAPPING: { [key: string]: string } = {
   'gpt-5': 'openai/gpt-5',
   'claude-4-sonnet': 'anthropic/claude-3.5-sonnet',
@@ -11,25 +10,44 @@ const MODEL_MAPPING: { [key: string]: string } = {
   'deepseek': 'deepseek/deepseek-chat-v3.1:free'
 };
 
+// Helper function for CORS headers
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*', // Adjust origin as needed for security
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
+}
+
+export async function OPTIONS() {
+  // Handle preflight request
+  return new NextResponse(null, {
+    status: 204, // No Content
+    headers: corsHeaders(),
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // CORS headers for actual POST response
+    const headers = corsHeaders();
+
     const { message, models } = await request.json();
 
     if (!message || !models || !Array.isArray(models)) {
-      return NextResponse.json(
-        { error: 'Invalid request format' },
-        { status: 400 }
+      return new NextResponse(
+        JSON.stringify({ error: 'Invalid request format' }),
+        { status: 400, headers }
       );
     }
 
     if (!OPENROUTER_API_KEY) {
-      return NextResponse.json(
-        { error: 'OpenRouter API key not configured' },
-        { status: 500 }
+      return new NextResponse(
+        JSON.stringify({ error: 'OpenRouter API key not configured' }),
+        { status: 500, headers }
       );
     }
 
-    // Make parallel requests to all selected models
     const responsePromises = models.map(async (modelId: string) => {
       const openRouterModel = MODEL_MAPPING[modelId];
       if (!openRouterModel) {
@@ -84,13 +102,16 @@ export async function POST(request: NextRequest) {
     });
 
     const results = await Promise.all(responsePromises);
-    
-    return NextResponse.json({ responses: results });
+
+    return new NextResponse(
+      JSON.stringify({ responses: results }),
+      { status: 200, headers }
+    );
   } catch (error) {
     console.error('Chat API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: corsHeaders() }
     );
   }
 }
