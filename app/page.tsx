@@ -94,8 +94,8 @@ interface ModelResponse {
 const AI_MODELS: AIModel[] = [
   {
     id: 'gpt-5',
-    name: 'GPT-5',
-    provider: 'OpenAI',
+    name: 'OpenAI',
+    provider: 'Chatgpt',
     description: 'Latest GPT model with advanced reasoning',
     icon: <GPTLogo className="w-8 h-8" />,
     color: 'from-violet-500 to-purple-600',
@@ -103,8 +103,8 @@ const AI_MODELS: AIModel[] = [
   },
   {
     id: 'claude-4-sonnet',
-    name: 'Claude 4 Sonnet',
-    provider: 'Anthropic',
+    name: 'Anthropic',
+    provider: 'Claude ai',
     description: 'Fast and efficient reasoning model',
     icon: <ClaudeLogo className="w-8 h-8" />,
     color: 'from-cyan-500 to-blue-600',
@@ -112,8 +112,8 @@ const AI_MODELS: AIModel[] = [
   },
   {
     id: 'gemini-2.5',
-    name: 'Gemini 2.5',
-    provider: 'Google',
+    name: 'Google',
+    provider: 'Gemini',
     description: 'Multimodal reasoning capabilities',
     icon: <GeminiLogo className="w-8 h-8" />,
     color: 'from-emerald-500 to-teal-600',
@@ -142,6 +142,31 @@ export default function Home() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  
+  // State for file attachments
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showFilePicker, setShowFilePicker] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  
+  // Check for mobile screen size and collapse sidebar by default
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) { // Standard mobile breakpoint
+        setSidebarCollapsed(true);
+      }
+    };
+    
+    // Set initial state
+    handleResize();
+    
+    // Add event listener for window resize
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [passwordChange, setPasswordChange] = useState({ current: '', new: '', confirm: '' });
   const [passwordLoading, setPasswordLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -267,17 +292,25 @@ export default function Home() {
   };
 
   const handleSendMessage = async () => {
-    if (!currentInput.trim() || selectedModels.length === 0 || !user) return;
+    if ((!currentInput.trim() && attachedFiles.length === 0) || selectedModels.length === 0 || !user) return;
+
+    // Create message content - include file information if files are attached
+    let messageContent = currentInput;
+    if (attachedFiles.length > 0) {
+      const fileNames = attachedFiles.map(file => file.name).join(', ');
+      messageContent += `\n[Attached: ${fileNames}]`;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: currentInput,
+      content: messageContent,
       role: 'user',
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
     setCurrentInput('');
+    setAttachedFiles([]);
     setIsLoading(true);
 
     // Create or get session
@@ -303,6 +336,8 @@ export default function Home() {
 
     try {
       // Make API call to our backend which will call OpenRouter
+      // Note: In a real implementation, you would need to handle file uploads
+      // This would typically involve FormData and multipart/form-data
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -310,7 +345,13 @@ export default function Home() {
         },
         body: JSON.stringify({
           message: currentInput,
-          models: selectedModels
+          models: selectedModels,
+          // In a real implementation, you would upload files and include references
+          attachedFiles: attachedFiles.length > 0 ? attachedFiles.map(file => ({
+            name: file.name,
+            type: file.type,
+            size: file.size
+          })) : []
         })
       });
 
@@ -371,6 +412,39 @@ export default function Home() {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+  
+  // Handle file attachment
+  const handleFileAttachment = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setAttachedFiles(prev => [...prev, ...newFiles]);
+      setShowFilePicker(false);
+    }
+  };
+  
+  // Handle image upload
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setAttachedFiles(prev => [...prev, ...newFiles]);
+      setShowImagePicker(false);
+    }
+  };
+  
+  // Remove attached file
+  const removeAttachedFile = (index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+  
+  // Trigger file input click
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+  
+  // Trigger image input click
+  const openImagePicker = () => {
+    imageInputRef.current?.click();
   };
 
   // Show auth form if not logged in
@@ -457,44 +531,7 @@ export default function Home() {
             )}
           </div>
 
-          {/* User Info */}
-          <div className={cn(
-            "rounded-xl p-4 mb-6 border",
-            darkMode ? "bg-slate-700/50 border-slate-600" : "bg-slate-100/80 border-slate-300"
-          )}>
-            <div className="flex items-center gap-3 mb-3">
-              <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center",
-                darkMode ? "bg-slate-600" : "bg-slate-300"
-              )}>
-                <User className={cn("w-4 h-4", darkMode ? "text-white" : "text-slate-700")} />
-              </div>
-              {!sidebarCollapsed && (
-                <div className="flex-1 min-w-0">
-                  <p className={cn(
-                    "text-sm font-medium truncate",
-                    darkMode ? "text-white" : "text-slate-800"
-                  )}>
-                    {user.email}
-                  </p>
-                </div>
-              )}
-            </div>
-            {!sidebarCollapsed && (
-              <button
-                onClick={() => signOut()}
-                className={cn(
-                  "w-full flex items-center justify-center gap-2 transition-colors text-sm",
-                  darkMode 
-                    ? "text-slate-400 hover:text-white" 
-                    : "text-slate-600 hover:text-slate-800"
-                )}
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </button>
-            )}
-        </div>
+          {/* User Info section removed */}
 
         {/* New Chat Button */}
         <button 
@@ -586,25 +623,10 @@ export default function Home() {
             sidebarCollapsed ? "left-3 right-3" : "left-6 right-6"
           )}>
             <div className="space-y-3">
-              {/* Settings Button */}
-              <button
-                onClick={() => setShowSettings(true)}
-                className={cn(
-                  "flex items-center gap-2 p-2 transition-colors rounded-lg",
-                  darkMode 
-                    ? "text-gray-400 hover:text-white hover:bg-slate-700/50" 
-                    : "text-gray-600 hover:text-slate-800 hover:bg-slate-200/50",
-                  sidebarCollapsed ? "w-full justify-center" : "w-full"
-                )}
-                title="Settings"
-              >
-                <User className="w-5 h-5" />
-                {!sidebarCollapsed && <span className="text-sm">Settings</span>}
-              </button>
-
+              
               {/* Dark Mode Toggle */}
-          <button
-            onClick={toggleDarkMode}
+              <button
+                onClick={toggleDarkMode}
                 className={cn(
                   "flex items-center gap-2 p-2 transition-colors rounded-lg",
                   darkMode 
@@ -613,30 +635,58 @@ export default function Home() {
                   sidebarCollapsed ? "w-full justify-center" : "w-full"
                 )}
                 title={darkMode ? "Light Mode" : "Dark Mode"}
-          >
-            <Moon className="w-5 h-5" />
+              >
+                <Moon className="w-5 h-5" />
                 {!sidebarCollapsed && <span className="text-sm">{darkMode ? "Light" : "Dark"}</span>}
               </button>
 
-              {/* Sidebar Collapse Toggle */}
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className={cn(
-                  "flex items-center gap-2 p-2 transition-colors rounded-lg",
-                  darkMode 
-                    ? "text-gray-400 hover:text-white hover:bg-slate-700/50" 
-                    : "text-gray-600 hover:text-slate-800 hover:bg-slate-200/50",
-                  sidebarCollapsed ? "w-full justify-center" : "w-full"
+              {/* Settings Button */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className={cn(
+                    "flex items-center gap-2 p-2 transition-colors rounded-lg flex-grow",
+                    darkMode 
+                      ? "text-gray-400 hover:text-white hover:bg-slate-700/50" 
+                      : "text-gray-600 hover:text-slate-800 hover:bg-slate-200/50",
+                    sidebarCollapsed ? "justify-center" : ""
+                  )}
+                  title="Settings"
+                >
+                  <User className="w-5 h-5" />
+                  {!sidebarCollapsed && <span className="text-sm">Settings</span>}
+                </button>
+                {!sidebarCollapsed && (
+                  <button
+                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    className={cn(
+                      "p-2 transition-colors rounded-lg",
+                      darkMode 
+                        ? "text-gray-400 hover:text-white hover:bg-slate-700/50" 
+                        : "text-gray-600 hover:text-slate-800 hover:bg-slate-200/50"
+                    )}
+                    title="Collapse Sidebar"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
                 )}
-                title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-              >
-                {sidebarCollapsed ? (
+              </div>
+              
+              {/* Collapse Button - Now below the human button when sidebar is collapsed */}
+              {sidebarCollapsed && (
+                <button
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  className={cn(
+                    "w-full p-2 transition-colors rounded-lg flex justify-center mt-3",
+                    darkMode 
+                      ? "text-gray-400 hover:text-white hover:bg-slate-700/50" 
+                      : "text-gray-600 hover:text-slate-800 hover:bg-slate-200/50"
+                  )}
+                  title="Expand Sidebar"
+                >
                   <ChevronRight className="w-5 h-5" />
-                ) : (
-                  <ChevronLeft className="w-5 h-5" />
-                )}
-                {!sidebarCollapsed && <span className="text-sm">Collapse</span>}
-          </button>
+                </button>
+              )}
 
 
             </div>
@@ -672,8 +722,8 @@ export default function Home() {
 
 
             {/* Chat Columns */}
-            <div className="overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50 h-[calc(100vh-200px)]">
-              <div className="grid gap-6 min-w-max h-full" style={{ gridTemplateColumns: `repeat(${AI_MODELS.length}, 400px)` }}>
+            <div className="overflow-x-auto overflow-y-auto pb-20 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50 h-[calc(100vh-160px)]">
+              <div className="flex min-h-full">
               {AI_MODELS.map((model) => {
                 const modelId = model.id;
                 const isSelected = selectedModels.includes(modelId);
@@ -684,70 +734,84 @@ export default function Home() {
                   <div
                     key={modelId}
                     className={cn(
-                      "rounded-2xl border-2 p-6 h-full flex flex-col backdrop-blur-sm transition-all duration-300",
+                      "rounded-md border flex flex-col backdrop-blur-sm transition-all duration-300",
                       isSelected 
                         ? darkMode 
-                          ? "bg-slate-800 border-slate-600 shadow-xl hover:shadow-2xl" 
-                          : "bg-white border-slate-300 shadow-xl hover:shadow-2xl"
+                          ? "bg-slate-800 border-slate-600 shadow-xl hover:shadow-2xl p-8 w-[600px] min-h-[calc(100vh-170px)]" 
+                          : "bg-white border-slate-300 shadow-xl hover:shadow-2xl p-8 w-[600px] min-h-[calc(100vh-170px)]"
                         : darkMode 
-                          ? "bg-slate-800/50 border-slate-700/50 opacity-60" 
-                          : "bg-white/50 border-slate-300/50 opacity-60"
+                          ? "bg-black border-gray-800 p-0 w-[40px]" 
+                          : "bg-white/50 border-slate-300/50 p-0 w-[40px]"
                     )}
                   >
                     {/* Model Header */}
-                    <div className="mb-6 -mx-6 -mt-6">
+                    <div className={cn(
+                      "mb-6",
+                      isSelected ? "-mx-6 -mt-6" : ""
+                    )}>
                       <div className={cn(
-                        "flex items-center justify-between px-4 py-3 w-full transition-all duration-300",
+                        "flex items-center justify-between w-full transition-all duration-300",
+                        isSelected
+                          ? "px-4 py-3"
+                          : "p-1",
                         isSelected
                           ? darkMode 
                             ? "bg-slate-700 border-b border-slate-600"
                             : "bg-white border-b border-gray-200"
                           : darkMode
-                            ? "bg-slate-700/50 border-b border-slate-600/50"
-                            : "bg-white/50 border-b border-gray-200"
+                            ? "bg-black"
+                            : "bg-white/50"
                       )}>
                                                 <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 flex items-center justify-center -ml-2">
+                          <div className={cn(
+                            "flex items-center justify-center",
+                            isSelected ? "w-12 h-12 -ml-2" : "w-6 h-6"
+                          )}>
                             {model?.icon}
                           </div>
-                        <div>
-                          <h3 className={cn(
-                              "font-bold text-lg transition-colors duration-300",
-                              isSelected
-                                ? darkMode ? "text-white" : "text-gray-900"
-                                : darkMode ? "text-gray-400" : "text-gray-500"
-                          )}>{model?.name}</h3>
-                          <p className={cn(
-                              "text-sm transition-colors duration-300",
-                              isSelected
-                                ? darkMode ? "text-gray-300" : "text-gray-600"
-                                : darkMode ? "text-gray-500" : "text-gray-400"
-                          )}>{model?.provider}</p>
-                        </div>
+                        {isSelected && (
+                          <div>
+                            <h3 className={cn(
+                                "font-bold text-lg transition-colors duration-300",
+                                darkMode ? "text-white" : "text-gray-900"
+                            )}>{model?.name}</h3>
+                            <p className={cn(
+                                "text-sm transition-colors duration-300",
+                                darkMode ? "text-gray-300" : "text-gray-600"
+                            )}>{model?.provider}</p>
+                          </div>
+                        )}
                         </div>
                         
                         {/* Toggle Switch - Select/Deselect Model */}
-                        <button 
-                          onClick={() => handleModelToggle(modelId)}
-                          className={cn(
-                            "relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500/50 bg-black border border-slate-700",
-                          )}
-                          title={isSelected ? "Deselect Model" : "Select Model"}
-                        >
-                          <span
+                        {isSelected ? (
+                          <button 
+                            onClick={() => handleModelToggle(modelId)}
                             className={cn(
-                              "inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-200",
-                              isSelected ? "translate-x-6" : "translate-x-1"
+                              "relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-violet-500/50 bg-black border border-slate-700",
                             )}
-                          />
-                        </button>
+                            title="Deselect Model"
+                          >
+                            <span
+                              className="inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-200 translate-x-6"
+                            />
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleModelToggle(modelId)}
+                            className="w-6 h-6 flex items-center justify-center"
+                            title="Select Model"
+                          >
+                            <ChevronRight className="w-4 h-4 text-gray-400" />
+                          </button>
+                        )}
                       </div>
                     </div>
 
                     {/* Chat Content */}
                     <div className={cn(
-                      "flex-1 space-y-4 transition-opacity duration-300",
-                      !isSelected && "opacity-50"
+                      "flex-1 space-y-4 transition-opacity duration-300 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50 max-h-[calc(100vh-250px)]",
+                      isSelected ? "" : "hidden"
                     )}>
                       {hasMessages && isSelected && (
                         <>
@@ -846,9 +910,99 @@ export default function Home() {
                 : "bg-white/95 border-slate-300",
               sidebarCollapsed ? "left-20 right-6" : "left-72 right-6"
             )}>
-              <div className="flex flex-col gap-2 p-4">
+              <div className="flex items-center p-2">
+                {/* Left Action Buttons */}
+                <div className="flex items-center gap-1 mr-2">
+                  <button 
+                    onClick={openImagePicker}
+                    className={cn(
+                      "p-2 transition-all duration-200 rounded-lg hover:scale-105",
+                      darkMode 
+                        ? "text-white hover:bg-slate-700/60" 
+                        : "text-slate-700 hover:bg-slate-200/80"
+                    )}
+                    title="Upload Images"
+                  >
+                    <Image className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={openFilePicker}
+                    className={cn(
+                      "p-2 transition-all duration-200 rounded-lg hover:scale-105",
+                      darkMode 
+                        ? "text-white hover:bg-slate-700/60" 
+                        : "text-slate-700 hover:bg-slate-200/80"
+                    )}
+                    title="Attach Files"
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </button>
+                  
+                  {/* Hidden file inputs */}
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileAttachment}
+                    className="hidden" 
+                    multiple 
+                    accept=".pdf,.doc,.docx,.txt,.rtf,.csv,.xlsx,.xls,.ppt,.pptx"
+                  />
+                  <input 
+                    type="file" 
+                    ref={imageInputRef} 
+                    onChange={handleImageUpload}
+                    className="hidden" 
+                    multiple 
+                    accept="image/*"
+                  />
+                </div>
+
+                {/* Attached Files Display */}
+                {attachedFiles.length > 0 && (
+                  <div className={cn(
+                    "flex flex-wrap gap-2 mb-2 max-w-full overflow-x-auto py-2",
+                    darkMode ? "bg-slate-700/60" : "bg-slate-100",
+                    "rounded-lg px-2"
+                  )}>
+                    {attachedFiles.map((file, index) => (
+                      <div 
+                        key={index} 
+                        className={cn(
+                          "flex items-center gap-1 py-1 px-2 rounded-md",
+                          darkMode ? "bg-slate-600" : "bg-white border border-slate-200"
+                        )}
+                      >
+                        {file.type.startsWith('image/') ? (
+                          <div className="w-5 h-5 flex-shrink-0">
+                            <Image className="w-full h-full" />
+                          </div>
+                        ) : (
+                          <div className="w-5 h-5 flex-shrink-0">
+                            <Paperclip className="w-full h-full" />
+                          </div>
+                        )}
+                        <span className={cn(
+                          "text-xs truncate max-w-[100px]",
+                          darkMode ? "text-white" : "text-slate-700"
+                        )}>
+                          {file.name}
+                        </span>
+                        <button
+                          onClick={() => removeAttachedFile(index)}
+                          className={cn(
+                            "p-1 rounded-full hover:bg-opacity-80",
+                            darkMode ? "hover:bg-slate-500" : "hover:bg-slate-200"
+                          )}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
                 {/* Main Input Field */}
-                <div className="relative">
+                <div className="relative flex-grow">
                   <input
                     value={currentInput}
                     onChange={(e) => setCurrentInput(e.target.value)}
@@ -874,44 +1028,14 @@ export default function Home() {
                   )}
                 </div>
 
-                {/* Action Buttons Row */}
-                <div className="flex items-center justify-between">
-                  {/* Left Action Buttons */}
-                  <div className="flex items-center gap-2">
-                    <button 
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-2 transition-all duration-200 rounded-lg hover:scale-105",
-                        darkMode 
-                          ? "text-white hover:bg-slate-700/60" 
-                          : "text-slate-700 hover:bg-slate-200/80"
-                      )}
-                      title="Generate Image"
-                    >
-                      <Image className="w-4 h-4" />
-                      <span className="text-sm font-medium">Generate Image</span>
-                    </button>
-                    <button 
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-2 transition-all duration-200 rounded-lg hover:scale-105",
-                        darkMode 
-                          ? "text-white hover:bg-slate-700/60" 
-                          : "text-slate-700 hover:bg-slate-200/80"
-                      )}
-                      title="Attach Files"
-                    >
-                      <Paperclip className="w-4 h-4" />
-                      <span className="text-sm font-medium">Attach Files</span>
-                    </button>
-                </div>
-
                 {/* Right Action Buttons */}
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 ml-2">
                   <button 
                     className={cn(
-                        "p-2.5 transition-all duration-200 rounded-lg hover:scale-105",
+                      "p-2 transition-all duration-200 rounded-lg hover:scale-105",
                       darkMode 
-                          ? "text-white hover:bg-slate-700/60" 
-                          : "text-slate-700 hover:bg-slate-200/80"
+                        ? "text-white hover:bg-slate-700/60" 
+                        : "text-slate-700 hover:bg-slate-200/80"
                     )}
                     title="Voice Input"
                   >
@@ -919,10 +1043,10 @@ export default function Home() {
                   </button>
                   <button 
                     className={cn(
-                        "p-2.5 transition-all duration-200 rounded-lg hover:scale-105",
+                      "p-2 transition-all duration-200 rounded-lg hover:scale-105",
                       darkMode 
-                          ? "text-white hover:bg-slate-700/60" 
-                          : "text-slate-700 hover:bg-slate-200/80"
+                        ? "text-white hover:bg-slate-700/60" 
+                        : "text-slate-700 hover:bg-slate-200/80"
                     )}
                     title="AI Suggestions"
                   >
@@ -932,16 +1056,15 @@ export default function Home() {
                     onClick={handleSendMessage}
                     disabled={!currentInput.trim() || selectedModels.length === 0 || isLoading}
                     className={cn(
-                        "p-3 transition-all duration-200 rounded-lg shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
+                      "p-2.5 transition-all duration-200 rounded-lg shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
                       currentInput.trim() && selectedModels.length > 0 && !isLoading
-                          ? "bg-green-500 text-white hover:bg-green-600"
+                        ? "bg-green-500 text-white hover:bg-green-600"
                         : "bg-slate-600/50 text-slate-400"
                     )}
                     title="Send Message"
                   >
                     <Send className="w-5 h-5" />
                   </button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1004,6 +1127,20 @@ export default function Home() {
               >
                 {passwordLoading ? 'Updating...' : 'Update Password'}
               </button>
+              
+              {/* Sign Out Button */}
+              <div className="mt-6 pt-6 border-t border-slate-600">
+                <button
+                  onClick={() => {
+                    signOut();
+                    setShowSettings(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 p-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                >
+                  <LogOut className="w-5 h-5" />
+                  Sign Out
+                </button>
+              </div>
             </div>
           </div>
         </div>
