@@ -27,7 +27,7 @@ export async function OPTIONS() {
   });
 }
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     // CORS headers for actual POST response
     const headers = corsHeaders();
