@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, MessageSquare, Bot, Sparkles, Plus, Search, Moon, Sun, Image, Paperclip, Mic, Sparkles as SparklesIcon, X, History, LogOut, User, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
-import NextImage from 'next/image';
+import { Send, Plus, Moon, Sun, Image, Paperclip, Mic, Sparkles as SparklesIcon, X, History, LogOut, User, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
 
 // Custom SVG Logo Components
 const GPTLogo = ({ className = "w-8 h-8", darkMode = false }: { className?: string; darkMode?: boolean }) => (
@@ -226,7 +225,7 @@ export default function Home() {
         // For each session, get the first message
         const sessionsWithFirstMessage = await Promise.all(
           data.map(async (session) => {
-            const { data: messageData, error: messageError } = await supabase
+            const { data: messageData } = await supabase
               .from('chat_messages')
               .select('content')
               .eq('session_id', session.id)
@@ -337,7 +336,7 @@ export default function Home() {
           // Add AI responses for this user message
           if (allResponses.has(userMsg.id)) {
             const responses = allResponses.get(userMsg.id);
-            for (const response of responses as any[]) {
+            for (const response of responses as Array<{model_id: string, content: string, is_best?: boolean}>) {
               formattedMessages.push({
                 id: `${userMsg.id}-${response.model_id}`,
                 content: response.content,
@@ -357,7 +356,7 @@ export default function Home() {
           const lastUserMessage = userMessages[userMessages.length - 1];
           if (lastUserMessage && allResponses.has(lastUserMessage.id)) {
             const lastResponses = allResponses.get(lastUserMessage.id);
-            const formattedResponses = lastResponses.map((resp: any) => ({
+            const formattedResponses = lastResponses.map((resp: {model_id: string, content: string, is_best?: boolean}) => ({
               modelId: resp.model_id,
               content: resp.content,
               isLoading: false,
@@ -367,7 +366,7 @@ export default function Home() {
             setResponses(formattedResponses);
             
             // Update selected models based on responses
-            const modelIds = lastResponses.map((resp: any) => resp.model_id);
+            const modelIds = lastResponses.map((resp: {model_id: string, content: string, is_best?: boolean}) => resp.model_id);
             setSelectedModels(modelIds);
           }
         }

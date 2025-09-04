@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/auth-context';
+// import { useAuth } from '@/lib/auth-context'; // Unused for now
 import { useTheme } from '@/lib/theme-context';
 import { Sparkles, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
