@@ -80,3 +80,13 @@ body {
 .scrollbar-thin::-webkit-scrollbar-thumb:horizontal:hover {
   background: rgba(71, 85, 105, 1);
 }
+
+/* Hide scrollbar completely */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}

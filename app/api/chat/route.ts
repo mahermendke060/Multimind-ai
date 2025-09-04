@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
                 content: message
               }
             ],
-            max_tokens: 1000,
+            max_tokens: 800,
             temperature: 0.7
           })
         });

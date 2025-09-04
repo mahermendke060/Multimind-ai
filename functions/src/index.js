@@ -51,7 +51,7 @@ app.post('/chat', async (req, res) => {
           body: JSON.stringify({
             model: openRouterModel,
             messages: [{ role: 'user', content: message }],
-            max_tokens: 1000,
+            max_tokens: 800,
             temperature: 0.7
           })
         });

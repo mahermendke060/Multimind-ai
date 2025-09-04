@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, MessageSquare, Bot, Sparkles, Plus, Search, Moon, Image, Paperclip, Mic, Sparkles as SparklesIcon, X, History, LogOut, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Send, MessageSquare, Bot, Sparkles, Plus, Search, Moon, Sun, Image, Paperclip, Mic, Sparkles as SparklesIcon, X, History, LogOut, User, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
 import NextImage from 'next/image';
 
 // Custom SVG Logo Components
-const GPTLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
+const GPTLogo = ({ className = "w-8 h-8", darkMode = false }: { className?: string; darkMode?: boolean }) => (
   <div 
     className={className}
     style={{
-      backgroundImage: 'url(/svg-logos/gpt-5.svg)',
+      backgroundImage: `url(/svg-logos/${darkMode ? 'chatgpt-white.svg' : 'gpt-5.svg'})`,
       backgroundSize: 'contain',
       backgroundRepeat: 'no-repeat',
       backgroundPosition: 'center',
@@ -71,7 +71,7 @@ interface AIModel {
   name: string;
   provider: string;
   description: string;
-  icon: React.ReactNode;
+  icon: React.ReactNode | ((darkMode: boolean) => React.ReactNode);
   color: string;
   bgColor: string;
 }
@@ -81,6 +81,8 @@ interface Message {
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  modelId?: string;
+  isBest?: boolean;
 }
 
 interface ModelResponse {
@@ -97,7 +99,7 @@ const AI_MODELS: AIModel[] = [
     name: 'OpenAI',
     provider: 'Chatgpt',
     description: 'Latest GPT model with advanced reasoning',
-    icon: <GPTLogo className="w-8 h-8" />,
+    icon: (darkMode: boolean) => <GPTLogo className="w-8 h-8" darkMode={darkMode} />,
     color: 'from-violet-500 to-purple-600',
     bgColor: 'bg-violet-500/10'
   },
@@ -141,11 +143,14 @@ export default function Home() {
 
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [recentSessions, setRecentSessions] = useState<{id: string, title: string, firstMessage: string, date: string}[]>([]);
   
   // State for file attachments
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
-  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showPhotoOptions, setShowPhotoOptions] = useState(false);
   const [showFilePicker, setShowFilePicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -153,7 +158,9 @@ export default function Home() {
   // Check for mobile screen size and collapse sidebar by default
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) { // Standard mobile breakpoint
+      const mobile = window.innerWidth < 768; // Standard mobile breakpoint
+      setIsMobile(mobile);
+      if (mobile) {
         setSidebarCollapsed(true);
       }
     };
@@ -178,6 +185,203 @@ export default function Home() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, responses]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showUserDropdown) {
+        const target = event.target as Element;
+        if (!target.closest('[data-dropdown="user-menu"]')) {
+          setShowUserDropdown(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserDropdown]);
+  
+  // Load recent chat sessions
+  useEffect(() => {
+    if (user) {
+      loadRecentSessions();
+    }
+  }, [user]);
+  
+  // Function to load recent chat sessions
+  const loadRecentSessions = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .select('id, title, updated_at')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(10); // Increased to show more chats like ChatGPT
+      
+      if (error) throw error;
+      
+      if (data) {
+        // For each session, get the first message
+        const sessionsWithFirstMessage = await Promise.all(
+          data.map(async (session) => {
+            const { data: messageData, error: messageError } = await supabase
+              .from('chat_messages')
+              .select('content')
+              .eq('session_id', session.id)
+              .eq('role', 'user')
+              .order('created_at', { ascending: true })
+              .limit(1)
+              .single();
+            
+            // Format the date to show in the UI
+            const updatedAt = new Date(session.updated_at);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            let dateDisplay = '';
+            if (updatedAt.toDateString() === today.toDateString()) {
+              dateDisplay = 'Today';
+            } else if (updatedAt.toDateString() === yesterday.toDateString()) {
+              dateDisplay = 'Yesterday';
+            } else {
+              dateDisplay = updatedAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+            
+            return {
+              id: session.id,
+              title: session.title,
+              firstMessage: messageData?.content || 'New conversation',
+              date: dateDisplay
+            };
+          })
+        );
+        
+        setRecentSessions(sessionsWithFirstMessage);
+      }
+    } catch (error) {
+      console.error('Error loading recent sessions:', error);
+    }
+  };
+  
+  // Function to load a specific chat session
+  const loadChatSession = async (sessionId: string) => {
+    if (!user) return;
+    
+    try {
+      // Validate session ID
+      if (!sessionId) {
+        throw new Error('Invalid session ID');
+      }
+      
+      // Set current session ID
+      setCurrentSessionId(sessionId);
+      
+      // Clear current messages and responses
+      setMessages([]);
+      setResponses([]);
+      
+      // Load messages for this session
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('chat_messages')
+        .select('id, content, role, timestamp')
+        .eq('session_id', sessionId)
+        .order('timestamp', { ascending: true });
+      
+      if (messagesError) {
+        console.log('Error fetching messages:', messagesError);
+        throw new Error(`Failed to fetch messages: ${messagesError.message}`);
+      }
+      
+      if (!messagesData) {
+        throw new Error('No message data returned from database');
+      }
+      
+      if (messagesData) {
+        // Load all model responses for all user messages
+        const userMessages = messagesData.filter(msg => msg.role === 'user');
+        const allResponses = new Map();
+        
+        // For each user message, load its model responses
+        for (const userMsg of userMessages) {
+          if (userMsg.id) {
+            const { data: responsesData, error: responsesError } = await supabase
+              .from('model_responses')
+              .select('model_id, content, is_best')
+              .eq('message_id', userMsg.id);
+            
+            if (!responsesError && responsesData) {
+              allResponses.set(userMsg.id, responsesData);
+            }
+          }
+        }
+        
+        // Create proper conversational flow: user → AI responses → user → AI responses
+        const formattedMessages = [];
+        
+        // Get only user messages and sort them chronologically
+        const userMessagesOnly = messagesData.filter(msg => msg.role === 'user')
+          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        
+        for (const userMsg of userMessagesOnly) {
+          // Add user message
+          formattedMessages.push({
+            id: userMsg.id,
+            content: userMsg.content,
+            role: 'user' as const,
+            timestamp: new Date(userMsg.timestamp)
+          });
+          
+          // Add AI responses for this user message
+          if (allResponses.has(userMsg.id)) {
+            const responses = allResponses.get(userMsg.id);
+            for (const response of responses as any[]) {
+              formattedMessages.push({
+                id: `${userMsg.id}-${response.model_id}`,
+                content: response.content,
+                role: 'assistant' as const,
+                timestamp: new Date(userMsg.timestamp),
+                modelId: response.model_id,
+                isBest: response.is_best
+              });
+            }
+          }
+        }
+        
+        setMessages(formattedMessages);
+        
+        // Set responses for the last user message (for current interaction)
+        if (userMessages.length > 0) {
+          const lastUserMessage = userMessages[userMessages.length - 1];
+          if (lastUserMessage && allResponses.has(lastUserMessage.id)) {
+            const lastResponses = allResponses.get(lastUserMessage.id);
+            const formattedResponses = lastResponses.map((resp: any) => ({
+              modelId: resp.model_id,
+              content: resp.content,
+              isLoading: false,
+              isBest: resp.is_best
+            }));
+            
+            setResponses(formattedResponses);
+            
+            // Update selected models based on responses
+            const modelIds = lastResponses.map((resp: any) => resp.model_id);
+            setSelectedModels(modelIds);
+          }
+        }
+      }
+    } catch (error) {
+      // Improved error logging with more details
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorDetails = error instanceof Error ? (error.stack || '') : JSON.stringify(error);
+      console.error(`Error loading chat session: ${errorMessage}`, { error, details: errorDetails });
+      
+      // Show a user-friendly message
+      alert('Failed to load chat session. Please try again.');
+    }
+  };
 
   // Don't render until theme is mounted to prevent hydration issues
   if (!mounted) {
@@ -257,8 +461,11 @@ export default function Home() {
     setMessages([]);
     setResponses([]);
     setCurrentInput('');
-    setSelectedModels([]);
+    setSelectedModels(AI_MODELS.map(m => m.id));
     setCurrentSessionId(null);
+    
+    // Refresh recent sessions list
+    loadRecentSessions();
   };
 
   const handlePasswordChange = async () => {
@@ -391,6 +598,9 @@ export default function Home() {
           .from('chat_sessions')
           .update({ title, updated_at: new Date().toISOString() })
           .eq('id', sessionId);
+          
+        // Refresh recent sessions list
+        loadRecentSessions();
       }
 
     } catch (error) {
@@ -428,7 +638,7 @@ export default function Home() {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       setAttachedFiles(prev => [...prev, ...newFiles]);
-      setShowImagePicker(false);
+      setShowPhotoOptions(false);
     }
   };
   
@@ -442,9 +652,15 @@ export default function Home() {
     fileInputRef.current?.click();
   };
   
-  // Trigger image input click
-  const openImagePicker = () => {
+  // Handle photo options
+  const handleTakePhoto = () => {
+    // TODO: Implement camera functionality
+    setShowPhotoOptions(false);
+  };
+  
+  const handleSelectPhoto = () => {
     imageInputRef.current?.click();
+    setShowPhotoOptions(false);
   };
 
   // Show auth form if not logged in
@@ -499,28 +715,46 @@ export default function Home() {
       "min-h-screen transition-colors duration-300",
       darkMode ? "bg-[#202124] text-white" : "bg-[#FBF9F6] text-gray-900"
     )}>
+      {/* Mobile Hamburger Menu */}
+      {isMobile && (
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className={cn(
+            "fixed top-4 left-4 z-50 p-2 rounded-lg transition-all duration-200",
+            darkMode 
+              ? "bg-slate-800/90 text-white hover:bg-slate-700" 
+              : "bg-white/90 text-gray-900 hover:bg-gray-100",
+            "shadow-lg backdrop-blur-sm"
+          )}
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+      )}
+
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 h-full backdrop-blur-xl transition-all duration-300",
+        "fixed left-0 top-0 h-full backdrop-blur-xl transition-all duration-300 z-40",
         darkMode 
           ? "bg-slate-800/80 border-r border-slate-600" 
           : "bg-white/90 border-r border-slate-300",
-        sidebarCollapsed ? "w-16" : "w-64"
+        sidebarCollapsed ? "w-16" : "w-64",
+        isMobile && sidebarCollapsed ? "-translate-x-full" : "translate-x-0"
       )}>
         <div className={cn(
           "h-full transition-all duration-300 overflow-hidden", 
-          sidebarCollapsed ? "p-3" : "p-6"
+          sidebarCollapsed ? "p-3" : "pl-6 pr-0 py-6"
         )}>
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <SparklesIcon className="w-6 h-6 text-white" />
-          </div>
+        {/* Logo and Dark Mode Toggle */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <SparklesIcon className="w-6 h-6 text-white" />
+            </div>
             {!sidebarCollapsed && (
               <div>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-violet-400 to-purple-500 bg-clip-text text-transparent">
-            MultiMind
-          </h1>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-violet-400 to-purple-500 bg-clip-text text-transparent">
+                  MultiMind
+                </h1>
                 <p className={cn(
                   "text-sm",
                   darkMode ? "text-slate-400" : "text-slate-600"
@@ -530,91 +764,113 @@ export default function Home() {
               </div>
             )}
           </div>
+          
+          {/* Dark Mode Toggle */}
+          {!sidebarCollapsed && (
+            <button
+              onClick={toggleDarkMode}
+              className={cn(
+                "p-2 rounded-lg transition-colors mr-2",
+                darkMode 
+                  ? "text-gray-400 hover:text-white hover:bg-slate-700/50" 
+                  : "text-gray-600 hover:text-slate-800 hover:bg-slate-200/50"
+              )}
+              title={darkMode ? "Light Mode" : "Dark Mode"}
+            >
+              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+          )}
+        </div>
 
           {/* User Info section removed */}
 
         {/* New Chat Button */}
-        <button 
-          onClick={handleNewChat}
+        {/* New Chat and History Buttons */}
+        <div className={cn(
+          "flex gap-2 mb-6",
+          sidebarCollapsed ? "flex-col" : "flex-row mr-2"
+        )}>
+          <button 
+            onClick={handleNewChat}
             className={cn(
-              "w-full bg-gradient-to-r from-violet-600 to-purple-700 text-white rounded-lg py-3 flex items-center justify-center gap-2 mb-6 hover:from-violet-700 hover:to-purple-800 transition-all duration-200 shadow-lg",
-              sidebarCollapsed ? "px-2" : "px-4"
+              "bg-gradient-to-r from-violet-600 to-purple-700 text-white rounded-lg py-2 flex items-center justify-center gap-2 hover:from-violet-700 hover:to-purple-800 transition-all duration-200 shadow-lg",
+              sidebarCollapsed ? "w-full px-2" : "flex-1 px-4"
             )}>
-          <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" />
             {!sidebarCollapsed && <span>New Chat</span>}
-        </button>
-
-          {/* Navigation */}
-          <div className="space-y-2 mb-6">
-            <Link
-              href="/history"
-              className={cn(
-                "flex items-center gap-3 p-3 rounded-lg transition-colors",
-                darkMode 
-                  ? "text-slate-400 hover:text-white hover:bg-slate-700/50" 
-                  : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/50",
-                sidebarCollapsed ? "justify-center" : ""
-              )}
-            >
-              <History className="w-5 h-5" />
-              {!sidebarCollapsed && <span>Chat History</span>}
-            </Link>
-          </div>
+          </button>
+          
+          <Link
+            href="/history"
+            className={cn(
+              "bg-gradient-to-r from-violet-600 to-purple-700 text-white rounded-lg py-2 flex items-center justify-center gap-2 hover:from-violet-700 hover:to-purple-800 transition-all duration-200 shadow-lg",
+              sidebarCollapsed ? "w-full px-2" : "flex-1 px-4"
+            )}
+          >
+            <History className="w-4 h-4" />
+            {!sidebarCollapsed && <span>History</span>}
+          </Link>
+        </div>
 
 
 
           {/* Recent Chats */}
           {!sidebarCollapsed && (
-        <div className="mb-6">
+            <div className="mb-6 flex flex-col" style={{ height: 'calc(100vh - 300px)' }}>
               <h3 className={cn(
-                "text-sm font-medium mb-3",
+                "text-sm font-medium mb-3 flex-shrink-0 px-3",
                 darkMode ? "text-gray-300" : "text-gray-700"
               )}>Recent Chats</h3>
-              <div className="space-y-2">
-                {messages.length > 0 ? (
-                  <div className="space-y-2">
-                    {messages.slice(-3).map((message) => (
-                      <div key={message.id} className={cn(
-                        "rounded-lg p-3 cursor-pointer transition-colors",
-                        darkMode 
-                          ? "bg-gray-700 hover:bg-gray-600" 
-                          : "bg-gray-100 hover:bg-gray-200"
-                      )}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className={cn(
-                            "w-4 h-4 rounded-full flex items-center justify-center",
-                            darkMode ? "bg-gray-600" : "bg-gray-300"
-                          )}>
+              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50 pr-6">
+                <div className="space-y-1">
+                  {recentSessions.length > 0 ? (
+                    <div>
+                      {recentSessions.map((session) => (
+                        <div 
+                          key={session.id} 
+                          className={cn(
+                            "py-3 px-3 cursor-pointer transition-colors border-l-2 flex flex-col",
+                            darkMode 
+                              ? currentSessionId === session.id
+                                ? "bg-gray-700 border-l-white"
+                                : "hover:bg-gray-800 border-l-transparent" 
+                              : currentSessionId === session.id
+                                ? "bg-gray-100 border-l-gray-800"
+                                : "hover:bg-gray-50 border-l-transparent"
+                          )}
+                          onClick={() => loadChatSession(session.id)}
+                        >
+                          <div className="flex justify-between items-center mb-1">
                             <span className={cn(
-                              "text-xs font-medium",
-                              darkMode ? "text-white" : "text-gray-700"
-                            )}>U</span>
+                              "text-sm font-medium truncate flex-1",
+                              darkMode ? "text-gray-200" : "text-gray-800"
+                            )}>{session.title}</span>
+                            <span className={cn(
+                              "text-xs",
+                              darkMode ? "text-gray-400" : "text-gray-500"
+                            )}>{session.date}</span>
                           </div>
-                          <span className={cn(
-                            "text-xs",
-                            darkMode ? "text-gray-400" : "text-gray-600"
-                          )}>You</span>
+                          <p className={cn(
+                            "text-xs truncate",
+                            darkMode ? "text-gray-400" : "text-gray-500"
+                          )}>
+                            {session.firstMessage}
+                          </p>
                         </div>
-                        <p className={cn(
-                          "text-sm truncate",
-                          darkMode ? "text-gray-200" : "text-gray-800"
-                        )}>
-                          {message.content}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className={cn(
-                    "text-center py-4",
-                    darkMode ? "text-gray-400" : "text-gray-500"
-                  )}>
-                <p className="text-sm">No conversations yet</p>
-                <p className="text-xs">Start chatting to see history here</p>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={cn(
+                      "text-center py-4",
+                      darkMode ? "text-gray-400" : "text-gray-500"
+                    )}>
+                      <p className="text-sm">No conversations yet</p>
+                      <p className="text-xs">Start chatting to see history here</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
           )}
 
           {/* Settings Section */}
@@ -624,50 +880,83 @@ export default function Home() {
           )}>
             <div className="space-y-3">
               
-              {/* Dark Mode Toggle */}
-              <button
-                onClick={toggleDarkMode}
-                className={cn(
-                  "flex items-center gap-2 p-2 transition-colors rounded-lg",
-                  darkMode 
-                    ? "text-gray-400 hover:text-white hover:bg-slate-700/50" 
-                    : "text-gray-600 hover:text-slate-800 hover:bg-slate-200/50",
-                  sidebarCollapsed ? "w-full justify-center" : "w-full"
-                )}
-                title={darkMode ? "Light Mode" : "Dark Mode"}
-              >
-                <Moon className="w-5 h-5" />
-                {!sidebarCollapsed && <span className="text-sm">{darkMode ? "Light" : "Dark"}</span>}
-              </button>
-
-              {/* Settings Button */}
-              <div className="flex items-center gap-2">
+              {/* User Dropdown Button */}
+              <div className="flex items-center gap-2 relative" data-dropdown="user-menu">
                 <button
-                  onClick={() => setShowSettings(true)}
+                  onClick={() => setShowUserDropdown(!showUserDropdown)}
                   className={cn(
-                    "flex items-center gap-2 p-2 transition-colors rounded-lg flex-grow",
-                    darkMode 
-                      ? "text-gray-400 hover:text-white hover:bg-slate-700/50" 
-                      : "text-gray-600 hover:text-slate-800 hover:bg-slate-200/50",
-                    sidebarCollapsed ? "justify-center" : ""
+                    "flex items-center gap-2 py-3 bg-gradient-to-r from-violet-600 to-purple-700 text-white rounded-lg hover:from-violet-700 hover:to-purple-800 transition-all duration-200 shadow-lg flex-grow",
+                    sidebarCollapsed ? "justify-center px-2" : "px-4"
                   )}
-                  title="Settings"
+                  title={user?.email || "User Menu"}
                 >
-                  <User className="w-5 h-5" />
-                  {!sidebarCollapsed && <span className="text-sm">Settings</span>}
+                  <User className="w-4 h-4" />
+                  {!sidebarCollapsed && <span className="text-sm">{user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}</span>}
                 </button>
+
+                {/* User Dropdown Menu */}
+                {showUserDropdown && (
+                  <div className={cn(
+                    "absolute bottom-full mb-2 bg-slate-800/95 backdrop-blur-sm border border-slate-600/50 rounded-xl shadow-2xl z-50 min-w-[240px] overflow-hidden",
+                    sidebarCollapsed ? "left-0" : "left-0"
+                  )}>
+                    {/* Email ID Header */}
+                    <div className="flex items-center gap-3 px-4 py-3 bg-slate-700/50 border-b border-slate-600/50">
+                      <div className="w-8 h-8 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-white truncate">
+                          {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
+                        </div>
+                        <div className="text-xs text-gray-400 truncate">
+                          {user?.email || 'user@example.com'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="py-2">
+                      {/* Settings */}
+                      <button
+                        onClick={() => {
+                          setShowSettings(true);
+                          setShowUserDropdown(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-slate-700/50 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>Settings</span>
+                      </button>
+                      
+                      {/* Logout */}
+                      <button
+                        onClick={() => {
+                          signOut();
+                          setShowUserDropdown(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-slate-700/50 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        <span>Log out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
                 {!sidebarCollapsed && (
                   <button
                     onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                     className={cn(
-                      "p-2 transition-colors rounded-lg",
-                      darkMode 
-                        ? "text-gray-400 hover:text-white hover:bg-slate-700/50" 
-                        : "text-gray-600 hover:text-slate-800 hover:bg-slate-200/50"
+                      "py-3 px-2 bg-gradient-to-r from-violet-600 to-purple-700 text-white rounded-lg hover:from-violet-700 hover:to-purple-800 transition-all duration-200 shadow-lg"
                     )}
                     title="Collapse Sidebar"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-4 h-4" />
                   </button>
                 )}
               </div>
@@ -677,10 +966,7 @@ export default function Home() {
                 <button
                   onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                   className={cn(
-                    "w-full p-2 transition-colors rounded-lg flex justify-center mt-3",
-                    darkMode 
-                      ? "text-gray-400 hover:text-white hover:bg-slate-700/50" 
-                      : "text-gray-600 hover:text-slate-800 hover:bg-slate-200/50"
+                    "w-full py-3 px-2 bg-gradient-to-r from-violet-600 to-purple-700 text-white rounded-lg hover:from-violet-700 hover:to-purple-800 transition-all duration-200 shadow-lg flex justify-center mt-3"
                   )}
                   title="Expand Sidebar"
                 >
@@ -696,8 +982,8 @@ export default function Home() {
 
       {/* Main Content */}
       <div className={cn(
-        "transition-all duration-300 p-6", 
-        sidebarCollapsed ? "ml-16" : "ml-64"
+        "transition-all duration-300", 
+        isMobile ? "ml-0 p-0" : sidebarCollapsed ? "ml-16 p-6" : "ml-64 p-6"
       )}>
 
 
@@ -719,11 +1005,45 @@ export default function Home() {
         ) : (
           /* Chat Interface */
           <>
-
+            {/* Header/Partition with Menu - Mobile Only */}
+            {isMobile && (
+              <div className={cn(
+                "fixed top-0 left-0 right-0 z-30 backdrop-blur-xl border-b transition-all duration-300",
+                darkMode 
+                  ? "bg-slate-900/90 border-slate-700" 
+                  : "bg-white/90 border-slate-200"
+              )}>
+                <div className="flex items-center justify-between px-6 py-4">
+                  <button
+                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    className={cn(
+                      "p-2 rounded-lg transition-all duration-200",
+                      darkMode 
+                        ? "text-white hover:bg-slate-700/60" 
+                        : "text-gray-900 hover:bg-gray-100"
+                    )}
+                  >
+                    <Menu className="w-6 h-6" />
+                  </button>
+                  <div className={cn(
+                    "text-lg font-semibold",
+                    darkMode ? "text-white" : "text-gray-900"
+                  )}>
+                    MultiMind Chat
+                  </div>
+                  <div className="w-8 h-8 bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <SparklesIcon className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Chat Columns */}
-            <div className="overflow-x-auto overflow-y-auto pb-20 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50 h-[calc(100vh-160px)]">
-              <div className="flex min-h-full">
+            <div className={cn(
+              "overflow-x-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50",
+              isMobile ? "h-screen pt-16 pb-24" : "h-[calc(100vh-70px)] pb-20"
+            )}>
+              <div className="flex h-full">
               {AI_MODELS.map((model) => {
                 const modelId = model.id;
                 const isSelected = selectedModels.includes(modelId);
@@ -737,54 +1057,50 @@ export default function Home() {
                       "rounded-md border flex flex-col backdrop-blur-sm transition-all duration-300",
                       isSelected 
                         ? darkMode 
-                          ? "bg-slate-800 border-slate-600 shadow-xl hover:shadow-2xl p-8 w-[600px] min-h-[calc(100vh-170px)]" 
-                          : "bg-white border-slate-300 shadow-xl hover:shadow-2xl p-8 w-[600px] min-h-[calc(100vh-170px)]"
+                          ? isMobile 
+                            ? "bg-slate-800 border-slate-600 shadow-xl hover:shadow-2xl w-[90vw] h-full" 
+                            : "bg-slate-800 border-slate-600 shadow-xl hover:shadow-2xl w-[600px] h-full"
+                          : isMobile 
+                            ? "bg-white border-slate-300 shadow-xl hover:shadow-2xl w-[90vw] h-full"
+                            : "bg-white border-slate-300 shadow-xl hover:shadow-2xl w-[600px] h-full"
                         : darkMode 
-                          ? "bg-black border-gray-800 p-0 w-[40px]" 
-                          : "bg-white/50 border-slate-300/50 p-0 w-[40px]"
+                          ? isMobile 
+                            ? "bg-black border-gray-800 p-0 w-[60px]" 
+                            : "bg-black border-gray-800 p-0 w-[40px]"
+                          : isMobile 
+                            ? "bg-white/50 border-slate-300/50 p-0 w-[60px]"
+                            : "bg-white/50 border-slate-300/50 p-0 w-[40px]"
                     )}
                   >
                     {/* Model Header */}
                     <div className={cn(
                       "mb-6",
-                      isSelected ? "-mx-6 -mt-6" : ""
+                      isSelected ? "" : "flex flex-col items-center justify-start pt-4 h-full"
                     )}>
-                      <div className={cn(
-                        "flex items-center justify-between w-full transition-all duration-300",
-                        isSelected
-                          ? "px-4 py-3"
-                          : "p-1",
-                        isSelected
-                          ? darkMode 
+                      {isSelected ? (
+                        <div className={cn(
+                          "flex items-center justify-between w-full transition-all duration-300 px-4 py-3",
+                          darkMode 
                             ? "bg-slate-700 border-b border-slate-600"
                             : "bg-white border-b border-gray-200"
-                          : darkMode
-                            ? "bg-black"
-                            : "bg-white/50"
-                      )}>
-                                                <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "flex items-center justify-center",
-                            isSelected ? "w-12 h-12 -ml-2" : "w-6 h-6"
-                          )}>
-                            {model?.icon}
+                        )}>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-12 h-12 -ml-2">
+                              {typeof model?.icon === 'function' ? model.icon(darkMode) : model?.icon}
+                            </div>
+                            <div>
+                              <h3 className={cn(
+                                  "font-bold text-lg transition-colors duration-300",
+                                  darkMode ? "text-white" : "text-gray-900"
+                              )}>{model?.name}</h3>
+                              <p className={cn(
+                                  "text-sm transition-colors duration-300",
+                                  darkMode ? "text-gray-300" : "text-gray-600"
+                              )}>{model?.provider}</p>
+                            </div>
                           </div>
-                        {isSelected && (
-                          <div>
-                            <h3 className={cn(
-                                "font-bold text-lg transition-colors duration-300",
-                                darkMode ? "text-white" : "text-gray-900"
-                            )}>{model?.name}</h3>
-                            <p className={cn(
-                                "text-sm transition-colors duration-300",
-                                darkMode ? "text-gray-300" : "text-gray-600"
-                            )}>{model?.provider}</p>
-                          </div>
-                        )}
-                        </div>
-                        
-                        {/* Toggle Switch - Select/Deselect Model */}
-                        {isSelected ? (
+                          
+                          {/* Toggle Switch - Deselect Model */}
                           <button 
                             onClick={() => handleModelToggle(modelId)}
                             className={cn(
@@ -796,70 +1112,104 @@ export default function Home() {
                               className="inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-200 translate-x-6"
                             />
                           </button>
-                        ) : (
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center gap-4 h-full">
+                          <div className="flex items-center justify-center w-8 h-8">
+                            {typeof model?.icon === 'function' ? model.icon(darkMode) : model?.icon}
+                          </div>
                           <button 
                             onClick={() => handleModelToggle(modelId)}
                             className="w-6 h-6 flex items-center justify-center"
                             title="Select Model"
                           >
-                            <ChevronRight className="w-4 h-4 text-gray-400" />
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7V17" />
+                            </svg>
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Chat Content */}
                     <div className={cn(
-                      "flex-1 space-y-4 transition-opacity duration-300 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50 max-h-[calc(100vh-250px)]",
+                      "flex-1 transition-opacity duration-300 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800/50",
                       isSelected ? "" : "hidden"
                     )}>
+                      <div className="space-y-4 px-8 py-4">
                       {hasMessages && isSelected && (
-                        <>
-                          {/* User Message - Left Side */}
-                          <div className="flex items-start gap-4 mb-6">
-                            <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                              <User className="w-4 h-4 text-white" />
-                            </div>
-                            <div className="flex-1">
-                              <p className={cn(
-                                "text-base leading-relaxed",
-                                darkMode ? "text-white" : "text-gray-900"
-                              )}>{messages[messages.length - 1]?.content}</p>
-                            </div>
-                          </div>
-
-                          {/* AI Response - Left Side */}
-                          <div className="flex items-start gap-4">
-                            <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
-                              {model?.icon}
-                            </div>
-                            <div className="flex-1">
-                              {response?.isLoading ? (
-                            <div className={cn(
-                                  "flex items-center gap-2",
-                                  darkMode ? "text-gray-300" : "text-gray-600"
-                            )}>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
-                                  <span className="text-sm">Thinking...</span>
-                                </div>
-                              ) : response?.error ? (
-                                <p className="text-red-600 text-sm">{response.error}</p>
-                              ) : response?.content ? (
-                                <div className="prose prose-sm max-w-none">
-                                  <p className={cn(
-                                    "text-base leading-relaxed whitespace-pre-wrap",
-                                    darkMode ? "text-white" : "text-gray-900"
-                                  )}>{response.content}</p>
+                        <div className="space-y-6">
+                          {/* Display messages filtered for this specific model */}
+                          {messages.filter(message => 
+                            message.role === 'user' || message.modelId === modelId
+                          ).map((message, index) => (
+                            <div key={message.id || index}>
+                              {message.role === 'user' ? (
+                                /* User Message */
+                                <div className="flex items-start gap-4 mb-6">
+                                  <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                                    <User className="w-4 h-4 text-white" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className={cn(
+                                      "text-base leading-relaxed",
+                                      darkMode ? "text-white" : "text-gray-900"
+                                    )}>{message.content}</p>
+                                  </div>
                                 </div>
                               ) : (
-                                <p className={cn(
-                                  "text-sm",
-                                  darkMode ? "text-gray-400" : "text-gray-500"
-                                )}>Ready to respond...</p>
+                                /* AI Response Message - Only for this specific model */
+                                <div className="flex items-start gap-4 mb-6">
+                                  <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+                                    {typeof model?.icon === 'function' ? model.icon(darkMode) : model?.icon}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="prose prose-sm max-w-none">
+                                      <p className={cn(
+                                        "text-base leading-relaxed whitespace-pre-wrap",
+                                        darkMode ? "text-white" : "text-gray-900"
+                                      )}>{message.content}</p>
+                                    </div>
+                                  </div>
+                                </div>
                               )}
                             </div>
-                          </div>
-                        </>
+                          ))}
+
+                          {/* Current AI Response (for the latest user message) */}
+                          {messages.length > 0 && messages[messages.length - 1]?.role === 'user' && (
+                            <div className="flex items-start gap-4">
+                              <div className="w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+                                {typeof model?.icon === 'function' ? model.icon(darkMode) : model?.icon}
+                              </div>
+                              <div className="flex-1">
+                                {response?.isLoading ? (
+                                  <div className={cn(
+                                    "flex items-center gap-2",
+                                    darkMode ? "text-gray-300" : "text-gray-600"
+                                  )}>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+                                    <span className="text-sm">Thinking...</span>
+                                  </div>
+                                ) : response?.error ? (
+                                  <p className="text-red-600 text-sm">{response.error}</p>
+                                ) : response?.content ? (
+                                  <div className="prose prose-sm max-w-none">
+                                    <p className={cn(
+                                      "text-base leading-relaxed whitespace-pre-wrap",
+                                      darkMode ? "text-white" : "text-gray-900"
+                                    )}>{response.content}</p>
+                                  </div>
+                                ) : (
+                                  <p className={cn(
+                                    "text-sm",
+                                    darkMode ? "text-gray-400" : "text-gray-500"
+                                  )}>Ready to respond...</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       )}
 
                       {!hasMessages && (
@@ -870,7 +1220,7 @@ export default function Home() {
                               ? "opacity-100"
                               : "opacity-40"
                           )}>
-                            {model?.icon}
+                            {typeof model?.icon === 'function' ? model.icon(darkMode) : model?.icon}
                           </div>
                           <h3 className={cn(
                             "text-2xl font-semibold mb-3 transition-colors duration-300",
@@ -893,6 +1243,7 @@ export default function Home() {
                           </p>
                         </div>
                       )}
+                      </div>
                     </div>
 
 
@@ -904,27 +1255,64 @@ export default function Home() {
 
             {/* Bottom Message Input */}
             <div className={cn(
-              "fixed bottom-8 rounded-2xl backdrop-blur-xl shadow-2xl transition-all duration-300 border-2 z-10 max-w-4xl mx-auto",
+              "fixed backdrop-blur-xl shadow-2xl transition-all duration-300 border-2 z-10 max-w-4xl mx-auto",
               darkMode 
                 ? "bg-slate-800/90 border-slate-600" 
                 : "bg-white/95 border-slate-300",
-              sidebarCollapsed ? "left-20 right-6" : "left-72 right-6"
+              isMobile 
+                ? "bottom-0 left-0 right-0 rounded-t-2xl" 
+                : sidebarCollapsed ? "bottom-8 left-20 right-6 rounded-2xl" : "bottom-8 left-72 right-6 rounded-2xl"
             )}>
               <div className="flex items-center p-2">
                 {/* Left Action Buttons */}
                 <div className="flex items-center gap-1 mr-2">
-                  <button 
-                    onClick={openImagePicker}
-                    className={cn(
-                      "p-2 transition-all duration-200 rounded-lg hover:scale-105",
-                      darkMode 
-                        ? "text-white hover:bg-slate-700/60" 
-                        : "text-slate-700 hover:bg-slate-200/80"
+                  <div className="relative">
+                    <button 
+                      onClick={() => setShowPhotoOptions(!showPhotoOptions)}
+                      className={cn(
+                        "p-2 transition-all duration-200 rounded-lg hover:scale-105",
+                        darkMode 
+                          ? "text-white hover:bg-slate-700/60" 
+                          : "text-slate-700 hover:bg-slate-200/80"
+                      )}
+                      title="Add Photo"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                    
+                    {/* Photo Options Dropdown */}
+                    {showPhotoOptions && (
+                      <div className={cn(
+                        "absolute bottom-full mb-2 left-0 rounded-lg shadow-lg border min-w-[140px] z-50",
+                        darkMode 
+                          ? "bg-slate-800 border-slate-600" 
+                          : "bg-white border-slate-200"
+                      )}>
+                        <button
+                          onClick={handleTakePhoto}
+                          className={cn(
+                            "w-full px-4 py-2 text-left hover:bg-opacity-80 transition-colors rounded-t-lg flex items-center gap-2",
+                            darkMode 
+                              ? "text-white hover:bg-slate-700" 
+                              : "text-gray-900 hover:bg-slate-100"
+                          )}
+                        >
+                          📷 Take Photo
+                        </button>
+                        <button
+                          onClick={handleSelectPhoto}
+                          className={cn(
+                            "w-full px-4 py-2 text-left hover:bg-opacity-80 transition-colors rounded-b-lg flex items-center gap-2",
+                            darkMode 
+                              ? "text-white hover:bg-slate-700" 
+                              : "text-gray-900 hover:bg-slate-100"
+                          )}
+                        >
+                          🖼️ Select Photo
+                        </button>
+                      </div>
                     )}
-                    title="Upload Images"
-                  >
-                    <Image className="w-5 h-5" />
-                  </button>
+                  </div>
                   <button 
                     onClick={openFilePicker}
                     className={cn(
@@ -1040,17 +1428,6 @@ export default function Home() {
                     title="Voice Input"
                   >
                     <Mic className="w-5 h-5" />
-                  </button>
-                  <button 
-                    className={cn(
-                      "p-2 transition-all duration-200 rounded-lg hover:scale-105",
-                      darkMode 
-                        ? "text-white hover:bg-slate-700/60" 
-                        : "text-slate-700 hover:bg-slate-200/80"
-                    )}
-                    title="AI Suggestions"
-                  >
-                    <SparklesIcon className="w-5 h-5" />
                   </button>
                   <button
                     onClick={handleSendMessage}
