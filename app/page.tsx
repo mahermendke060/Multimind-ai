@@ -1296,7 +1296,7 @@ export default function Home() {
                               : "text-gray-900 hover:bg-slate-100"
                           )}
                         >
-                          📷 Take Photo
+                           Take Photo
                         </button>
                         <button
                           onClick={handleSelectPhoto}
@@ -1307,7 +1307,7 @@ export default function Home() {
                               : "text-gray-900 hover:bg-slate-100"
                           )}
                         >
-                          🖼️ Select Photo
+                          Select Photo
                         </button>
                       </div>
                     )}
