@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
           headers: {
             'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
             'Content-Type': 'application/json',
-            'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+            'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://multimind-ai.vercel.app/',
             'X-Title': 'AI Model Comparison App'
           },
           body: JSON.stringify({
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
                 content: message
               }
             ],
-            max_tokens: 800,
+            max_tokens: 600,
             temperature: 0.7
           })
         });
