@@ -67,7 +67,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    const siteUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    // Get the site URL from environment variable first
+    let siteUrl = process.env.NEXT_PUBLIC_APP_URL;
+    
+    // If not set, construct from window location but ensure it's not localhost for production
+    if (!siteUrl) {
+      if (typeof window !== 'undefined') {
+        const { protocol, hostname, port } = window.location;
+        // Don't use localhost/127.0.0.1 URLs in production
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          // Fallback to a default production URL - you should set NEXT_PUBLIC_APP_URL
+          siteUrl = 'https://multimind-ai.vercel.app';
+        } else {
+          siteUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+        }
+      } else {
+        // Server-side fallback
+        siteUrl = 'https://multimind-ai.vercel.app';
+      }
+    }
+    
+    // Remove trailing slash if present
+    siteUrl = siteUrl.replace(/\/$/, '');
+    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${siteUrl}/reset-password`,
     });

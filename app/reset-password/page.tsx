@@ -21,14 +21,50 @@ export default function ResetPasswordPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is authenticated and has a session
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/auth');
+    // Handle the password reset flow
+    const handlePasswordReset = async () => {
+      // Check if this is a password reset callback
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type = hashParams.get('type');
+      
+      // Check for errors in the URL
+      const error = hashParams.get('error');
+      const errorDescription = hashParams.get('error_description');
+      
+      if (error) {
+        if (error === 'access_denied' && errorDescription?.includes('expired')) {
+          setError('The reset link has expired. Please request a new password reset.');
+        } else {
+          setError(`Reset link error: ${errorDescription || error}`);
+        }
+        return;
+      }
+      
+      if (type === 'recovery' && accessToken && refreshToken) {
+        // Set the session using the tokens from the URL
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+        
+        if (error) {
+          setError('Invalid or expired reset link. Please request a new password reset.');
+          return;
+        }
+      } else {
+        // If no valid reset tokens, redirect to auth
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setError('Invalid reset link. Please request a new password reset.');
+          setTimeout(() => router.push('/auth'), 3000);
+          return;
+        }
       }
     };
-    checkSession();
+    
+    handlePasswordReset();
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -185,7 +221,15 @@ export default function ResetPasswordPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-3">
+            {error && error.includes('expired') && (
+              <button
+                onClick={() => router.push('/auth')}
+                className="w-full bg-violet-600/20 text-violet-400 border border-violet-600/30 rounded-xl py-2 font-medium hover:bg-violet-600/30 transition-all duration-200"
+              >
+                Request New Reset Link
+              </button>
+            )}
             <button
               onClick={() => router.push('/')}
               className={cn(

@@ -51,11 +51,18 @@ Create a `.env.local` file in the root directory:
 # OpenRouter API Configuration
 OPENROUTER_API_KEY=your_openrouter_api_key_here
 
-# App Configuration
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+# App Configuration (REQUIRED for production)
+NEXT_PUBLIC_APP_URL=https://your-domain.com
+
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-**Important**: Replace `your_openrouter_api_key_here` with your actual OpenRouter API key.
+**Important Notes**:
+- Replace `your_openrouter_api_key_here` with your actual OpenRouter API key
+- **NEXT_PUBLIC_APP_URL is critical for password reset emails** - set this to your production domain (e.g., `https://multimind-ai.vercel.app`) to ensure reset links work on mobile devices and in production
+- For development, you can use `http://localhost:3000`, but production deployments must use the actual domain
 
 ### 4. Run the Development Server
 
@@ -173,7 +180,9 @@ To add new AI models:
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `OPENROUTER_API_KEY` | Your OpenRouter API key | Yes |
-| `NEXT_PUBLIC_APP_URL` | Your application URL | No (defaults to localhost) |
+| `NEXT_PUBLIC_APP_URL` | Your application URL (critical for password reset emails) | **Yes for production** |
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | Yes |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key | Yes |
 
 ## Troubleshooting
 
@@ -187,7 +196,12 @@ To add new AI models:
    - Check that the model ID exists in the `MODEL_MAPPING` object
    - Verify the model is available on OpenRouter
 
-3. **API request failures**
+3. **Password reset emails contain localhost links**
+   - Ensure `NEXT_PUBLIC_APP_URL` is set to your production domain in environment variables
+   - For Vercel deployments, set this in the Vercel dashboard under Environment Variables
+   - The URL should be your actual domain (e.g., `https://multimind-ai.vercel.app`), not localhost
+
+4. **API request failures**
    - Check your OpenRouter API key is valid
    - Ensure you have sufficient credits on OpenRouter
    - Check the OpenRouter status page for any service issues
