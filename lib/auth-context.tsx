@@ -70,20 +70,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get the site URL from environment variable first
     let siteUrl = process.env.NEXT_PUBLIC_APP_URL;
     
-    // If not set, construct from window location but ensure it's not localhost for production
-    if (!siteUrl) {
-      if (typeof window !== 'undefined') {
-        const { protocol, hostname, port } = window.location;
-        // Don't use localhost/127.0.0.1 URLs in production
-        if (hostname === 'localhost' || hostname === '127.0.0.1') {
-          // Fallback to a default production URL - you should set NEXT_PUBLIC_APP_URL
-          siteUrl = 'https://multimind-ai.vercel.app';
-        } else {
-          siteUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
-        }
+    // If not set, construct from window location
+    if (!siteUrl && typeof window !== 'undefined') {
+      const { protocol, hostname, port } = window.location;
+      
+      // Check if we're in development (localhost)
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        siteUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
       } else {
-        // Server-side fallback
-        siteUrl = 'https://multimind-ai.vercel.app';
+        // Production environment - use the actual domain
+        siteUrl = `${protocol}//${hostname}`;
+      }
+    }
+    
+    // Server-side fallback - should be set via environment variable in production
+    if (!siteUrl) {
+      if (process.env.NODE_ENV === 'production') {
+        // In production, this should never happen - environment variable should be set
+        throw new Error('NEXT_PUBLIC_APP_URL environment variable must be set in production');
+      } else {
+        // Development fallback
+        siteUrl = 'http://localhost:3000';
       }
     }
     

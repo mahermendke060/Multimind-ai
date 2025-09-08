@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Plus, Moon, Sun, Image, Paperclip, Mic, Sparkles as SparklesIcon, X, History, LogOut, User, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
+import { Send, Plus, Moon, Sun, Image, Paperclip, Mic, Sparkles as SparklesIcon, X, History, LogOut, User, ChevronLeft, ChevronRight, Menu, Brain, Cpu, Zap, Network, Bot } from 'lucide-react';
 
 // Custom SVG Logo Components
 const GPTLogo = ({ className = "w-8 h-8", darkMode = false }: { className?: string; darkMode?: boolean }) => (
@@ -59,6 +59,20 @@ const DeepSeekLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
     }}
   />
 );
+
+const AppLogo = ({ className = "w-8 h-8" }: { className?: string }) => (
+  <div 
+    className={className}
+    style={{
+      backgroundImage: 'url(/svg-logos/app-logo.svg)',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
+      minWidth: '32px',
+      minHeight: '32px'
+    }}
+  />
+);
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/lib/theme-context';
@@ -71,6 +85,7 @@ interface AIModel {
   provider: string;
   description: string;
   icon: React.ReactNode | ((darkMode: boolean) => React.ReactNode);
+  logoFile: string;
   color: string;
   bgColor: string;
 }
@@ -96,18 +111,20 @@ const AI_MODELS: AIModel[] = [
   {
     id: 'gpt-5',
     name: 'OpenAI',
-    provider: 'Chatgpt',
+    provider: 'ChatGPT',
     description: 'Latest GPT model with advanced reasoning',
     icon: (darkMode: boolean) => <GPTLogo className="w-8 h-8" darkMode={darkMode} />,
+    logoFile: 'gpt-5.svg',
     color: 'from-violet-500 to-purple-600',
     bgColor: 'bg-violet-500/10'
   },
   {
     id: 'claude-4-sonnet',
     name: 'Anthropic',
-    provider: 'Claude ai',
+    provider: 'Claude',
     description: 'Fast and efficient reasoning model',
     icon: <ClaudeLogo className="w-8 h-8" />,
+    logoFile: 'claude.svg',
     color: 'from-cyan-500 to-blue-600',
     bgColor: 'bg-cyan-500/10'
   },
@@ -117,6 +134,7 @@ const AI_MODELS: AIModel[] = [
     provider: 'Gemini',
     description: 'Multimodal reasoning capabilities',
     icon: <GeminiLogo className="w-8 h-8" />,
+    logoFile: 'gemini.svg',
     color: 'from-emerald-500 to-teal-600',
     bgColor: 'bg-emerald-500/10'
   },
@@ -126,6 +144,7 @@ const AI_MODELS: AIModel[] = [
     provider: 'DeepSeek',
     description: 'Advanced reasoning and coding',
     icon: <DeepSeekLogo className="w-8 h-8" />,
+    logoFile: 'deepseek.svg',
     color: 'from-rose-500 to-pink-600',
     bgColor: 'bg-rose-500/10'
   }
@@ -662,46 +681,363 @@ export default function Home() {
     setShowPhotoOptions(false);
   };
 
-  // Show auth form if not logged in
+  // Show welcome page if not logged in
   if (!user) {
     return (
       <div className={cn(
-        "min-h-screen flex items-center justify-center p-6 transition-colors duration-300",
-        darkMode ? "bg-slate-900" : "bg-white"
+        "min-h-screen relative transition-colors duration-500",
+        darkMode 
+          ? "bg-slate-900" 
+          : "bg-gradient-to-br from-slate-100 via-gray-50 to-slate-200"
       )}>
-        <div className="w-full max-w-md">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <SparklesIcon className="w-8 h-8 text-white" />
-            </div>
-            <h1 className={cn(
-              "text-3xl font-bold mb-2",
-              darkMode ? "text-white" : "text-slate-900"
-            )}>MultiMind</h1>
-            <p className={cn(
-              darkMode ? "text-slate-400" : "text-slate-600"
-            )}>Sign in to continue</p>
+        {/* Subtle Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Minimal Neural Network Pattern */}
+          <div className="absolute inset-0 opacity-[0.02]">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "absolute w-1 h-1 rounded-full animate-pulse",
+                  darkMode ? "bg-violet-400" : "bg-purple-600"
+                )}
+                style={{
+                  left: `${20 + Math.random() * 60}%`,
+                  top: `${20 + Math.random() * 60}%`,
+                  animationDelay: `${Math.random() * 3}s`,
+                  animationDuration: `${3 + Math.random() * 2}s`,
+                }}
+              />
+            ))}
           </div>
+          
+          {/* Very Subtle Gradient Orbs */}
+          <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-gradient-to-r from-violet-500/5 to-purple-500/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-gradient-to-r from-cyan-500/5 to-blue-500/5 rounded-full blur-3xl"></div>
+        </div>
 
-          {/* Auth Form */}
-          <div className={cn(
-            "rounded-2xl p-8 backdrop-blur-xl border transition-colors duration-300",
-            darkMode 
-              ? "bg-slate-800/80 border-slate-700/50" 
-              : "bg-white/90 border-slate-200/50"
-          )}>
-            <div className="text-center">
-              <p className={cn(
-                "mb-6",
-                darkMode ? "text-slate-400" : "text-slate-600"
-              )}>Please sign in to use MultiMind</p>
+        <div className="relative z-10 h-screen flex items-center justify-center p-4">
+          <div className="w-full max-w-7xl grid lg:grid-cols-2 gap-8 items-center">
+            {/* Left Column - Hero Content */}
+            <div className="text-center lg:text-left">
+              {/* Logo and Title */}
+              <div className="mb-6">
+                <div className="w-20 h-20 bg-gradient-to-r from-violet-500 via-purple-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto lg:mx-0 mb-4 shadow-xl relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-violet-400/20 to-purple-500/20 animate-pulse"></div>
+                  <SparklesIcon className="w-10 h-10 text-white relative z-10" />
+                  <div className="absolute inset-0 rounded-2xl border-2 border-violet-400/30 animate-spin" style={{ animationDuration: '8s' }}></div>
+                </div>
+                
+                <h1 className={cn(
+                  "text-4xl lg:text-6xl font-bold mb-3",
+                  darkMode ? "text-white" : "text-slate-900"
+                )}>
+                  <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                    MultiMind
+                  </span>
+                </h1>
+                
+                <p className={cn(
+                  "text-lg lg:text-xl font-semibold mb-3",
+                  darkMode ? "text-slate-100" : "text-slate-900"
+                )}>AI-Powered Intelligence Hub</p>
+                
+                <p className={cn(
+                  "text-base lg:text-lg mb-6 max-w-lg mx-auto lg:mx-0",
+                  darkMode ? "text-slate-200" : "text-slate-800"
+                )}>
+                  Compare responses from multiple leading AI models including GPT, Claude, Gemini, and DeepSeek in real-time.
+                </p>
+              </div>
+
+              {/* AI Model Logos */}
+              <div className="flex justify-center lg:justify-start items-center gap-4 mb-6">
+                <div className="w-10 h-10 flex items-center justify-center">
+                  <img src="/svg-logos/gpt-5.svg" alt="ChatGPT" className="w-8 h-8" />
+                </div>
+                <div className="w-10 h-10 flex items-center justify-center">
+                  <img src="/svg-logos/claude.svg" alt="Claude" className="w-8 h-8" />
+                </div>
+                <div className="w-10 h-10 flex items-center justify-center">
+                  <img src="/svg-logos/gemini.svg" alt="Gemini" className="w-8 h-8" />
+                </div>
+                <div className="w-10 h-10 flex items-center justify-center">
+                  <img src="/svg-logos/deepseek.svg" alt="DeepSeek" className="w-8 h-8" />
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-4 mb-6 max-w-sm mx-auto lg:mx-0">
+                <div className="text-center">
+                  <div className={cn("text-2xl font-bold", darkMode ? "text-white" : "text-slate-900")}>4+</div>
+                  <div className={cn("text-xs", darkMode ? "text-slate-300" : "text-slate-600")}>AI Models</div>
+                </div>
+                <div className="text-center">
+                  <div className={cn("text-2xl font-bold", darkMode ? "text-white" : "text-slate-900")}>∞</div>
+                  <div className={cn("text-xs", darkMode ? "text-slate-300" : "text-slate-600")}>Conversations</div>
+                </div>
+                <div className="text-center">
+                  <div className={cn("text-2xl font-bold", darkMode ? "text-white" : "text-slate-900")}>24/7</div>
+                  <div className={cn("text-xs", darkMode ? "text-slate-300" : "text-slate-600")}>Available</div>
+                </div>
+              </div>
+
+              {/* CTA */}
               <Link
                 href="/auth"
-                className="inline-block bg-gradient-to-r from-violet-600 to-purple-700 text-white rounded-xl py-3 px-6 font-medium hover:from-violet-700 hover:to-purple-800 transition-all duration-200"
+                className={cn(
+                  "inline-block rounded-2xl py-3 px-8 font-bold text-lg transition-all duration-300 transform hover:scale-105",
+                  "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white",
+                  "hover:from-violet-700 hover:via-purple-700 hover:to-indigo-700",
+                  "shadow-xl shadow-violet-500/25 mb-3"
+                )}
               >
-                Sign In / Sign Up
+                <div className="flex items-center justify-center gap-2">
+                  <SparklesIcon className="w-5 h-5" />
+                  Get Started Free
+                </div>
               </Link>
+              
+              <p className={cn(
+                "text-xs",
+                darkMode ? "text-slate-300" : "text-slate-700"
+              )}>
+                No credit card required • Join 10,000+ users
+              </p>
+            </div>
+
+            {/* AI Model Showcase Section */}
+            <div className="relative w-full max-w-4xl mx-auto h-[600px] flex items-center justify-center overflow-hidden">
+              {/* Floating Neural Network Background */}
+              <div className="absolute inset-0 opacity-30">
+                {/* Background particles */}
+                {[...Array(20)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-1 h-1 bg-gradient-to-r from-violet-400 to-cyan-400 rounded-full animate-pulse"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      animationDelay: `${Math.random() * 3}s`,
+                      animationDuration: `${2 + Math.random() * 2}s`
+                    }}
+                  />
+                ))}
+                
+                {/* Floating neural nodes */}
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={`node-${i}`}
+                    className="absolute w-2 h-2 bg-gradient-to-r from-emerald-400 to-rose-400 rounded-full opacity-60 animate-bounce"
+                    style={{
+                      left: `${10 + Math.random() * 80}%`,
+                      top: `${10 + Math.random() * 80}%`,
+                      animationDelay: `${Math.random() * 2}s`,
+                      animationDuration: `${3 + Math.random() * 2}s`
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Connection Lines */}
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 600 600">
+                {/* Animated gradient definitions */}
+                <defs>
+                  <linearGradient id="connectionGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="rgba(139, 92, 246, 0.8)">
+                      <animate attributeName="stop-opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="50%" stopColor="rgba(168, 85, 247, 0.6)">
+                      <animate attributeName="stop-opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="100%" stopColor="rgba(99, 102, 241, 0.8)">
+                      <animate attributeName="stop-opacity" values="0.3;0.8;0.3" dur="2s" repeatCount="indefinite" />
+                    </stop>
+                  </linearGradient>
+                  <linearGradient id="connectionGradient2" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="rgba(6, 182, 212, 0.8)">
+                      <animate attributeName="stop-opacity" values="0.3;0.8;0.3" dur="2.5s" repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="100%" stopColor="rgba(168, 85, 247, 0.8)">
+                      <animate attributeName="stop-opacity" values="0.8;0.3;0.8" dur="2.5s" repeatCount="indefinite" />
+                    </stop>
+                  </linearGradient>
+                  <linearGradient id="connectionGradient3" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="rgba(16, 185, 129, 0.8)">
+                      <animate attributeName="stop-opacity" values="0.3;0.8;0.3" dur="3s" repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="100%" stopColor="rgba(168, 85, 247, 0.8)">
+                      <animate attributeName="stop-opacity" values="0.8;0.3;0.8" dur="3s" repeatCount="indefinite" />
+                    </stop>
+                  </linearGradient>
+                  <linearGradient id="connectionGradient4" x1="100%" y1="100%" x2="0%" y2="0%">
+                    <stop offset="0%" stopColor="rgba(244, 63, 94, 0.8)">
+                      <animate attributeName="stop-opacity" values="0.3;0.8;0.3" dur="2.8s" repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="100%" stopColor="rgba(168, 85, 247, 0.8)">
+                      <animate attributeName="stop-opacity" values="0.8;0.3;0.8" dur="2.8s" repeatCount="indefinite" />
+                    </stop>
+                  </linearGradient>
+                </defs>
+                
+                {/* Base connection lines */}
+                <line x1="120" y1="120" x2="300" y2="300" stroke={darkMode ? "rgba(139, 92, 246, 0.2)" : "rgba(139, 92, 246, 0.3)"} strokeWidth="3" strokeDasharray="4,4" />
+                <line x1="480" y1="120" x2="300" y2="300" stroke={darkMode ? "rgba(6, 182, 212, 0.2)" : "rgba(6, 182, 212, 0.3)"} strokeWidth="3" strokeDasharray="4,4" />
+                <line x1="120" y1="480" x2="300" y2="300" stroke={darkMode ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.3)"} strokeWidth="3" strokeDasharray="4,4" />
+                <line x1="480" y1="480" x2="300" y2="300" stroke={darkMode ? "rgba(244, 63, 94, 0.2)" : "rgba(244, 63, 94, 0.3)"} strokeWidth="3" strokeDasharray="4,4" />
+                
+                {/* Animated data flow lines */}
+                <line x1="120" y1="120" x2="300" y2="300" stroke="url(#connectionGradient1)" strokeWidth="3" strokeDasharray="6,6">
+                  <animate attributeName="stroke-dashoffset" values="0;-12" dur="1s" repeatCount="indefinite" />
+                </line>
+                <line x1="480" y1="120" x2="300" y2="300" stroke="url(#connectionGradient2)" strokeWidth="3" strokeDasharray="6,6">
+                  <animate attributeName="stroke-dashoffset" values="0;-12" dur="1.2s" repeatCount="indefinite" />
+                </line>
+                <line x1="120" y1="480" x2="300" y2="300" stroke="url(#connectionGradient3)" strokeWidth="3" strokeDasharray="6,6">
+                  <animate attributeName="stroke-dashoffset" values="0;-12" dur="1.1s" repeatCount="indefinite" />
+                </line>
+                <line x1="480" y1="480" x2="300" y2="300" stroke="url(#connectionGradient4)" strokeWidth="3" strokeDasharray="6,6">
+                  <animate attributeName="stroke-dashoffset" values="0;-12" dur="1.3s" repeatCount="indefinite" />
+                </line>
+
+                {/* Floating data particles */}
+                <circle r="4" fill="rgba(139, 92, 246, 0.8)">
+                  <animateMotion dur="4s" repeatCount="indefinite" path="M 120,120 L 300,300" />
+                </circle>
+                <circle r="4" fill="rgba(6, 182, 212, 0.8)">
+                  <animateMotion dur="3.5s" repeatCount="indefinite" path="M 480,120 L 300,300" />
+                </circle>
+                <circle r="4" fill="rgba(16, 185, 129, 0.8)">
+                  <animateMotion dur="4.5s" repeatCount="indefinite" path="M 120,480 L 300,300" />
+                </circle>
+                <circle r="4" fill="rgba(244, 63, 94, 0.8)">
+                  <animateMotion dur="3.8s" repeatCount="indefinite" path="M 480,480 L 300,300" />
+                </circle>
+              </svg>
+
+              {/* Enhanced Central Logo with Multiple Effects */}
+              <div className="relative z-10">
+                {/* Multiple glow layers */}
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-500/30 via-purple-500/30 to-indigo-500/30 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute inset-2 bg-gradient-to-r from-cyan-500/20 via-emerald-500/20 to-rose-500/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+                
+                {/* Main logo container */}
+                <div className="relative w-36 h-36 bg-gradient-to-r from-violet-500 via-purple-600 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl">
+                  <SparklesIcon className="w-18 h-18 text-white animate-pulse" />
+                  
+                  {/* Multiple rotating rings */}
+                  <div className="absolute inset-0 rounded-full border-2 border-violet-400/40 animate-spin" style={{ animationDuration: '12s' }}></div>
+                  <div className="absolute inset-1 rounded-full border border-cyan-400/30 animate-spin" style={{ animationDuration: '8s', animationDirection: 'reverse' }}></div>
+                  <div className="absolute inset-2 rounded-full border border-emerald-400/20 animate-spin" style={{ animationDuration: '15s' }}></div>
+                  
+                  {/* Pulsing inner ring */}
+                  <div className="absolute inset-3 rounded-full border border-white/20 animate-ping" style={{ animationDuration: '3s' }}></div>
+                </div>
+                
+                {/* Orbiting particles */}
+                <div className="absolute inset-0 animate-spin" style={{ animationDuration: '20s' }}>
+                  <div className="absolute top-0 left-1/2 w-2 h-2 bg-violet-400 rounded-full transform -translate-x-1/2 -translate-y-2 animate-pulse"></div>
+                </div>
+                <div className="absolute inset-0 animate-spin" style={{ animationDuration: '25s', animationDirection: 'reverse' }}>
+                  <div className="absolute bottom-0 left-1/2 w-2 h-2 bg-cyan-400 rounded-full transform -translate-x-1/2 translate-y-2 animate-pulse"></div>
+                </div>
+                <div className="absolute inset-0 animate-spin" style={{ animationDuration: '18s' }}>
+                  <div className="absolute top-1/2 right-0 w-2 h-2 bg-emerald-400 rounded-full transform translate-x-2 -translate-y-1/2 animate-pulse"></div>
+                </div>
+                <div className="absolute inset-0 animate-spin" style={{ animationDuration: '22s', animationDirection: 'reverse' }}>
+                  <div className="absolute top-1/2 left-0 w-2 h-2 bg-rose-400 rounded-full transform -translate-x-2 -translate-y-1/2 animate-pulse"></div>
+                </div>
+              </div>
+
+              {/* AI Model Cards - Positioned Around Central Logo */}
+              
+              {/* ChatGPT - Top Left */}
+              <div className={cn(
+                "absolute top-4 left-4 w-52 p-4 rounded-xl border shadow-lg transform hover:scale-110 hover:rotate-1 transition-all duration-500 group cursor-pointer",
+                "hover:shadow-2xl hover:shadow-violet-500/25",
+                darkMode ? "bg-slate-800/90 border-slate-700/50 hover:bg-slate-800/95 hover:border-violet-500/50" : "bg-white/95 border-slate-200/50 hover:bg-white hover:border-violet-500/50"
+              )}>
+                <div className="flex items-center gap-3 mb-3">
+                  <img src="/svg-logos/gpt-5.svg" alt="ChatGPT" className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
+                  <div>
+                    <h3 className={cn("font-semibold text-sm group-hover:text-violet-500 transition-colors", darkMode ? "text-white" : "text-slate-900")}>
+                      ChatGPT 5
+                    </h3>
+                    <p className={cn("text-sm", darkMode ? "text-violet-400" : "text-violet-600")}>
+                      All Rounder Explainer
+                    </p>
+                  </div>
+                </div>
+                <p className={cn("text-sm leading-relaxed", darkMode ? "text-slate-300" : "text-slate-700")}>
+                  Great for questions, brainstorming, and clear explanations
+                </p>
+              </div>
+
+              {/* Claude - Top Right */}
+              <div className={cn(
+                "absolute top-4 right-4 w-52 p-4 rounded-xl border shadow-lg transform hover:scale-110 hover:-rotate-1 transition-all duration-500 group cursor-pointer",
+                "hover:shadow-2xl hover:shadow-cyan-500/25",
+                darkMode ? "bg-slate-800/90 border-slate-700/50 hover:bg-slate-800/95 hover:border-cyan-500/50" : "bg-white/95 border-slate-200/50 hover:bg-white hover:border-cyan-500/50"
+              )}>
+                <div className="flex items-center gap-3 mb-3">
+                  <img src="/svg-logos/claude.svg" alt="Claude" className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
+                  <div>
+                    <h3 className={cn("font-semibold text-sm group-hover:text-cyan-500 transition-colors", darkMode ? "text-white" : "text-slate-900")}>
+                      Claude Sonnet 4
+                    </h3>
+                    <p className={cn("text-sm", darkMode ? "text-cyan-400" : "text-cyan-600")}>
+                      Co-Writing Master
+                    </p>
+                  </div>
+                </div>
+                <p className={cn("text-sm leading-relaxed", darkMode ? "text-slate-300" : "text-slate-700")}>
+                  Refines emails, essays, and scripts while keeping your style
+                </p>
+              </div>
+
+              {/* Gemini - Bottom Left */}
+              <div className={cn(
+                "absolute bottom-4 left-4 w-52 p-4 rounded-xl border shadow-lg transform hover:scale-110 hover:rotate-1 transition-all duration-500 group cursor-pointer",
+                "hover:shadow-2xl hover:shadow-emerald-500/25",
+                darkMode ? "bg-slate-800/90 border-slate-700/50 hover:bg-slate-800/95 hover:border-emerald-500/50" : "bg-white/95 border-slate-200/50 hover:bg-white hover:border-emerald-500/50"
+              )}>
+                <div className="flex items-center gap-3 mb-3">
+                  <img src="/svg-logos/gemini.svg" alt="Gemini" className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
+                  <div>
+                    <h3 className={cn("font-semibold text-sm group-hover:text-emerald-500 transition-colors", darkMode ? "text-white" : "text-slate-900")}>
+                      Gemini 2.5 Pro
+                    </h3>
+                    <p className={cn("text-sm", darkMode ? "text-emerald-400" : "text-emerald-600")}>
+                      Long Context Master
+                    </p>
+                  </div>
+                </div>
+                <p className={cn("text-sm leading-relaxed", darkMode ? "text-slate-300" : "text-slate-700")}>
+                  Handles long documents and images, tracking full context
+                </p>
+              </div>
+
+              {/* DeepSeek - Bottom Right */}
+              <div className={cn(
+                "absolute bottom-4 right-4 w-52 p-4 rounded-xl border shadow-lg transform hover:scale-110 hover:-rotate-1 transition-all duration-500 group cursor-pointer",
+                "hover:shadow-2xl hover:shadow-rose-500/25",
+                darkMode ? "bg-slate-800/90 border-slate-700/50 hover:bg-slate-800/95 hover:border-rose-500/50" : "bg-white/95 border-slate-200/50 hover:bg-white hover:border-rose-500/50"
+              )}>
+                <div className="flex items-center gap-3 mb-3">
+                  <img src="/svg-logos/deepseek.svg" alt="DeepSeek" className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
+                  <div>
+                    <h3 className={cn("font-semibold text-sm group-hover:text-rose-500 transition-colors", darkMode ? "text-white" : "text-slate-900")}>
+                      DeepSeek R1
+                    </h3>
+                    <p className={cn("text-sm", darkMode ? "text-rose-400" : "text-rose-600")}>
+                      Reasoning Specialist
+                    </p>
+                  </div>
+                </div>
+                <p className={cn("text-sm leading-relaxed", darkMode ? "text-slate-300" : "text-slate-700")}>
+                  Excels at logic, math, and coding with clear solutions
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -860,8 +1196,8 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className={cn(
-                      "text-center py-4",
-                      darkMode ? "text-gray-400" : "text-gray-500"
+                      "min-h-screen flex items-center justify-center p-4",
+                      darkMode ? "bg-slate-900" : "bg-gradient-to-br from-gray-100 via-slate-50 to-gray-200"
                     )}>
                       <p className="text-sm">No conversations yet</p>
                       <p className="text-xs">Start chatting to see history here</p>
@@ -1085,7 +1421,7 @@ export default function Home() {
                         )}>
                           <div className="flex items-center gap-3">
                             <div className="flex items-center justify-center w-12 h-12 -ml-2">
-                              {typeof model?.icon === 'function' ? model.icon(darkMode) : model?.icon}
+                              <img src={`/svg-logos/${model.logoFile}`} alt={model.name} className="w-8 h-8" />
                             </div>
                             <div>
                               <h3 className={cn(
@@ -1115,7 +1451,7 @@ export default function Home() {
                       ) : (
                         <div className="flex flex-col items-center justify-center gap-4 h-full">
                           <div className="flex items-center justify-center w-8 h-8">
-                            {typeof model?.icon === 'function' ? model.icon(darkMode) : model?.icon}
+                            <img src={`/svg-logos/${model.logoFile}`} alt={model.name} className="w-6 h-6" />
                           </div>
                           <button 
                             onClick={() => handleModelToggle(modelId)}

@@ -17,6 +17,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MultiMind - Compare Multiple AI Models in Real-Time",
   description: "Compare responses from GPT-5, Claude 4 Sonnet, Gemini 2.5, and DeepSeek simultaneously. Modern interface for AI model comparison.",
+  icons: {
+    icon: '/svg-logos/app-logo.svg',
+    shortcut: '/svg-logos/app-logo.svg',
+    apple: '/svg-logos/app-logo.svg',
+  },
 };
 
 export default function RootLayout({
