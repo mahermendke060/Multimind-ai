@@ -67,8 +67,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
+    let siteUrl = process.env.NEXT_PUBLIC_APP_URL;
+    
+    // If environment variable is not set, try to detect from window location
+    if (!siteUrl && typeof window !== 'undefined') {
+      const { protocol, hostname, port } = window.location;
+      
+      // For Vercel deployments, hostname will be like 'multimind-ai.vercel.app'
+      if (hostname.includes('vercel.app') || hostname.includes('netlify.app') || 
+          (!hostname.includes('localhost') && !hostname.includes('127.0.0.1'))) {
+        // Production deployment
+        siteUrl = `${protocol}//${hostname}`;
+      } else {
+        // Local development
+        siteUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+      }
+    }
+    
+    // Hard-coded fallback for your specific deployment
+    if (!siteUrl) {
+      if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+        siteUrl = 'https://multimind-ai.vercel.app';
+      } else if (process.env.NODE_ENV === 'production') {
+        // Production fallback - use your actual deployment URL
+        siteUrl = 'https://multimind-ai.vercel.app';
+      } else {
+        // Development fallback
+        siteUrl = 'http://localhost:3000';
+      }
+    }
+    
+    // Remove trailing slash if present
+    siteUrl = siteUrl.replace(/\/$/, '');
+    
+    console.log('Reset password redirect URL:', `${siteUrl}/reset-password`); // Debug log
+    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${siteUrl}/reset-password`,
     });
     return { error };
   };
