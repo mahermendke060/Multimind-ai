@@ -3,6 +3,38 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Plus, Moon, Sun, Image, Paperclip, Mic, Sparkles as SparklesIcon, X, History, LogOut, User, ChevronLeft, ChevronRight, Menu, Brain, Cpu, Zap, Network, Bot } from 'lucide-react';
 
+// TypeScript declarations for Speech Recognition API
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+  onend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => any) | null;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: {
+      new(): SpeechRecognition;
+    };
+    webkitSpeechRecognition: {
+      new(): SpeechRecognition;
+    };
+  }
+}
+
 // Custom SVG Logo Components
 const GPTLogo = ({ className = "w-8 h-8", darkMode = false }: { className?: string; darkMode?: boolean }) => (
   <div 
@@ -172,6 +204,10 @@ export default function Home() {
   const [showFilePicker, setShowFilePicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  
+  // Voice recognition state
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   
   // Check for mobile screen size and collapse sidebar by default
   useEffect(() => {
@@ -679,6 +715,55 @@ export default function Home() {
   const handleSelectPhoto = () => {
     imageInputRef.current?.click();
     setShowPhotoOptions(false);
+  };
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      
+      recognitionInstance.continuous = false;
+      recognitionInstance.interimResults = false;
+      recognitionInstance.lang = 'en-US';
+      
+      recognitionInstance.onstart = () => {
+        setIsListening(true);
+      };
+      
+      recognitionInstance.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setCurrentInput(prev => prev + (prev ? ' ' : '') + transcript);
+      };
+      
+      recognitionInstance.onend = () => {
+        setIsListening(false);
+      };
+      
+      recognitionInstance.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        if (event.error === 'not-allowed') {
+          alert('Microphone access denied. Please allow microphone access to use voice input.');
+        }
+      };
+      
+      setRecognition(recognitionInstance);
+    }
+  }, []);
+
+  // Handle voice input
+  const handleVoiceInput = () => {
+    if (!recognition) {
+      alert('Speech recognition is not supported in your browser.');
+      return;
+    }
+    
+    if (isListening) {
+      recognition.stop();
+    } else {
+      recognition.start();
+    }
   };
 
   // Show welcome page if not logged in
@@ -1771,15 +1856,18 @@ export default function Home() {
                 {/* Right Action Buttons */}
                 <div className="flex items-center gap-1 ml-2">
                   <button 
+                    onClick={handleVoiceInput}
                     className={cn(
                       "p-2 transition-all duration-200 rounded-lg hover:scale-105",
-                      darkMode 
-                        ? "text-white hover:bg-slate-700/60" 
-                        : "text-slate-700 hover:bg-slate-200/80"
+                      isListening
+                        ? "bg-red-500 text-white animate-pulse"
+                        : darkMode 
+                          ? "text-white hover:bg-slate-700/60" 
+                          : "text-slate-700 hover:bg-slate-200/80"
                     )}
-                    title="Voice Input"
+                    title={isListening ? "Stop Recording" : "Voice Input"}
                   >
-                    <Mic className="w-5 h-5" />
+                    <Mic className={cn("w-5 h-5", isListening && "animate-pulse")} />
                   </button>
                   <button
                     onClick={handleSendMessage}
