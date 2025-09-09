@@ -716,6 +716,23 @@ export default function Home() {
           <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-gradient-to-r from-cyan-500/5 to-blue-500/5 rounded-full blur-3xl"></div>
         </div>
 
+        {/* Dark Mode Toggle Button - Top Right */}
+        <button
+          onClick={toggleDarkMode}
+          className={cn(
+            "fixed top-6 right-6 z-20 p-3 rounded-full transition-all duration-300 transform hover:scale-110",
+            "backdrop-blur-sm shadow-lg",
+            darkMode 
+              ? "bg-slate-800/90 text-yellow-400 hover:bg-slate-700/90 hover:text-yellow-300" 
+              : "bg-white/90 text-slate-600 hover:bg-gray-100/90 hover:text-slate-800",
+            "border border-opacity-20",
+            darkMode ? "border-slate-600" : "border-gray-300"
+          )}
+          aria-label="Toggle dark mode"
+        >
+          {darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+        </button>
+
         <div className="relative z-10 h-screen flex items-center justify-center p-4">
           <div className="w-full max-w-7xl grid lg:grid-cols-2 gap-8 items-center">
             {/* Left Column - Hero Content */}
@@ -753,7 +770,7 @@ export default function Home() {
               {/* AI Model Logos */}
               <div className="flex justify-center lg:justify-start items-center gap-4 mb-6">
                 <div className="w-10 h-10 flex items-center justify-center">
-                  <img src="/svg-logos/gpt-5.svg" alt="ChatGPT" className="w-8 h-8" />
+                  <img src={`/svg-logos/${darkMode ? 'chatgpt-white.svg' : 'gpt-5.svg'}`} alt="ChatGPT" className="w-8 h-8" />
                 </div>
                 <div className="w-10 h-10 flex items-center justify-center">
                   <img src="/svg-logos/claude.svg" alt="Claude" className="w-8 h-8" />
@@ -958,7 +975,7 @@ export default function Home() {
                 darkMode ? "bg-slate-800/90 border-slate-700/50 hover:bg-slate-800/95 hover:border-violet-500/50" : "bg-white/95 border-slate-200/50 hover:bg-white hover:border-violet-500/50"
               )}>
                 <div className="flex items-center gap-3 mb-3">
-                  <img src="/svg-logos/gpt-5.svg" alt="ChatGPT" className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
+                  <img src={`/svg-logos/${darkMode ? 'chatgpt-white.svg' : 'gpt-5.svg'}`} alt="ChatGPT" className="w-8 h-8 group-hover:scale-110 transition-transform duration-300" />
                   <div>
                     <h3 className={cn("font-semibold text-sm group-hover:text-violet-500 transition-colors", darkMode ? "text-white" : "text-slate-900")}>
                       ChatGPT 5
