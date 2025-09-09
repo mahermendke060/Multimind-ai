@@ -70,26 +70,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get the site URL from environment variable first
     let siteUrl = process.env.NEXT_PUBLIC_APP_URL;
     
-    // If not set, construct from window location
+    // If not set, construct from window location (but avoid localhost in production)
     if (!siteUrl && typeof window !== 'undefined') {
       const { protocol, hostname, port } = window.location;
       
-      // Check if we're in development (localhost)
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      // Only use localhost URLs in development environment
+      if (process.env.NODE_ENV === 'development' && (hostname === 'localhost' || hostname === '127.0.0.1')) {
         siteUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
-      } else {
-        // Production environment - use the actual domain
+      } else if (process.env.NODE_ENV !== 'development') {
+        // In production, always use the actual domain from window.location
         siteUrl = `${protocol}//${hostname}`;
       }
     }
     
-    // Server-side fallback - should be set via environment variable in production
+    // Final fallback - throw error in production if URL still not determined
     if (!siteUrl) {
       if (process.env.NODE_ENV === 'production') {
-        // In production, this should never happen - environment variable should be set
-        throw new Error('NEXT_PUBLIC_APP_URL environment variable must be set in production');
+        throw new Error('Unable to determine site URL for password reset. Please set NEXT_PUBLIC_APP_URL environment variable.');
       } else {
-        // Development fallback
+        // Development fallback only
         siteUrl = 'http://localhost:3000';
       }
     }
